@@ -1,0 +1,2275 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C Pointers & Tricky Concepts Revision</title>
+    <style>
+        /* Basic Styles & CSS Variables (Light Theme Default) */
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --code-bg: #f4f4f4;
+            --code-text: #333;
+            --border-color: #dddddd;
+            --button-bg: #e0e0e0;
+            --button-hover-bg: #cccccc;
+            --explanation-bg: #eeeeee;
+            --link-color: #007bff;
+            --header-color: #444;
+            --correct-ans-color: #28a745; /* Green */
+            --explanation-text-color: #555;
+        }
+
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Dark Theme */
+        body.dark-theme {
+            --bg-color: #222222;
+            --text-color: #eeeeee;
+            --code-bg: #333333;
+            --code-text: #f0f0f0;
+            --border-color: #555555;
+            --button-bg: #444444;
+            --button-hover-bg: #555555;
+            --explanation-bg: #3a3a3a;
+            --link-color: #64b5f6;
+            --header-color: #ccc;
+            --correct-ans-color: #66bb6a; /* Lighter Green */
+            --explanation-text-color: #ccc;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background-color: var(--bg-color); /* Ensure container bg matches body */
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        h1, h2, h3 {
+            color: var(--header-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-top: 1.5em;
+        }
+         h1:first-child, h2:first-child {
+            margin-top: 0;
+         }
+
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        code {
+            font-family: monospace;
+            background-color: var(--code-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+             color: var(--code-text);
+        }
+
+        pre code {
+             background-color: transparent; /* No extra bg inside pre */
+             padding: 0;
+             border-radius: 0;
+        }
+
+        #theme-toggle {
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border-radius: 5px;
+            font-size: 0.9em;
+            z-index: 1000; /* Ensure it stays on top */
+        }
+        #theme-toggle:hover {
+             background-color: var(--button-hover-bg);
+        }
+
+        #mcqs ol {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        #mcqs li {
+            background-color: var(--bg-color); /* Ensure list item bg matches body */
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .mcq-options label {
+            display: block;
+            margin: 5px 0 5px 20px;
+            cursor: pointer;
+        }
+         .mcq-options input[type="radio"] {
+             margin-right: 8px;
+             cursor: pointer;
+         }
+
+        .toggle-explanation {
+            margin-top: 15px;
+            padding: 8px 12px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border-radius: 4px;
+        }
+        .toggle-explanation:hover {
+             background-color: var(--button-hover-bg);
+        }
+
+        .explanation {
+            display: none; /* Initially hidden */
+            margin-top: 15px;
+            padding: 15px;
+            background-color: var(--explanation-bg);
+            border: 1px dashed var(--border-color);
+            border-radius: 4px;
+            color: var(--explanation-text-color);
+        }
+
+        .explanation strong {
+             color: var(--correct-ans-color);
+        }
+
+        /* Improve readability for explanations */
+         .explanation p {
+             margin-top: 0.5em;
+             margin-bottom: 0.5em;
+         }
+         .explanation code { /* Make inline code stand out slightly more in explanations */
+            background-color: rgba(0,0,0,0.1); /* Slightly different bg */
+         }
+         body.dark-theme .explanation code {
+             background-color: rgba(255,255,255,0.1);
+         }
+
+    </style>
+</head>
+<body>
+    <button id="theme-toggle">Toggle Dark Mode</button>
+    <div class="container">
+        <h1>C Pointers and Tricky Concepts Revision</h1>
+
+        <!-- Theory Section -->
+        <section id="theory">
+            <h2>Pointer Theory</h2>
+
+            <h3>What is a Pointer?</h3>
+            <p>A pointer is a special type of variable that stores the memory address of another variable. Instead of holding a value like an integer or character, it holds the location where a value is stored.</p>
+            <p>Think of memory as a sequence of numbered boxes. A regular variable puts a value *in* a box. A pointer variable stores the *box number* (address) of another box.</p>
+
+            <h3>Declaration and Initialization</h3>
+            <p>You declare a pointer using the asterisk <code>*</code> symbol.</p>
+            <pre><code>data_type *pointer_name;</code></pre>
+            <p>Example:</p>
+            <pre><code>int *ptr;     // ptr is a pointer to an integer
+char *cPtr;   // cPtr is a pointer to a character
+float *fPtr;  // fPtr is a pointer to a float</code></pre>
+            <p>To make a pointer point to a variable, you use the address-of operator <code>&</code>:</p>
+            <pre><code>int age = 30;
+int *pAge = &age; // pAge now stores the memory address of the 'age' variable</code></pre>
+            <p>It's good practice to initialize pointers to <code>NULL</code> if they don't point to a valid address immediately:</p>
+            <pre><code>int *pData = NULL; // NULL is typically defined as (void*)0</code></pre>
+
+            <h3>Dereferencing (Accessing the Value)</h3>
+            <p>To get the value stored at the memory address the pointer holds, you use the dereference operator <code>*</code> (yes, the same symbol as declaration, but used differently).</p>
+            <pre><code>int age = 30;
+int *pAge = &age;
+
+printf("Address stored in pAge: %p\n", (void*)pAge); // Print the address
+printf("Value at the address pAge points to: %d\n", *pAge); // Prints 30
+
+*pAge = 31; // Changes the value of 'age' through the pointer
+printf("New value of age: %d\n", age); // Prints 31</code></pre>
+
+            <h3>Pointer Arithmetic</h3>
+            <p>You can perform limited arithmetic operations on pointers (<code>+</code>, <code>-</code>, <code>++</code>, <code>--</code>). When you add an integer `n` to a pointer `p`, the address is increased by `n * sizeof(*p)` (the size of the data type it points to).</p>
+            <pre><code>int numbers[] = {10, 20, 30, 40};
+int *p = numbers; // Same as int *p = &numbers[0];
+
+printf("Value at p: %d\n", *p);         // Output: 10
+p++; // Moves pointer to the next integer location
+printf("Value at p after p++: %d\n", *p); // Output: 20
+
+int *p2 = p + 2; // p points to 20, p2 points 2 elements ahead (to 40)
+printf("Value at p+2: %d\n", *p2);    // Output: 40
+
+// Difference between pointers gives the number of elements between them
+printf("Difference p2 - p: %td\n", p2 - p); // Output: 2 (ptrdiff_t type)</code></pre>
+
+            <h3>Pointers and Arrays</h3>
+            <p>An array name, when used in most expressions, decays into a pointer to its first element.</p>
+            <pre><code>int arr[5] = {1, 2, 3, 4, 5};
+int *ptr = arr; // ptr points to arr[0]
+
+// These are equivalent:
+arr[i]
+*(arr + i)
+*(ptr + i)
+ptr[i]</code></pre>
+
+            <h3>Pointers and Functions</h3>
+            <p>Pointers allow functions to modify variables outside their own scope (simulating pass-by-reference).</p>
+            <pre><code>#include &lt;stdio.h&gt;
+
+void swap(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int main() {
+    int x = 10, y = 20;
+    printf("Before swap: x = %d, y = %d\n", x, y);
+    swap(&x, &y); // Pass the addresses of x and y
+    printf("After swap: x = %d, y = %d\n", x, y); // Output: x = 20, y = 10
+    return 0;
+}</code></pre>
+            <p>Functions can also return pointers, but be careful not to return a pointer to a local variable, as it will be invalid after the function exits (dangling pointer).</p>
+
+            <h3>Double Pointers (Pointers to Pointers)</h3>
+            <p>A double pointer stores the address of another pointer variable.</p>
+            <pre><code>int var = 100;
+int *ptr1 = &var;     // Pointer to int
+int **ptr2 = &ptr1;   // Pointer to pointer-to-int
+
+printf("Value of var = %d\n", var);
+printf("Value using ptr1 = %d\n", *ptr1);
+printf("Value using ptr2 = %d\n", **ptr2); // Dereference twice
+
+// Can be used to modify the pointer itself in a function
+void allocateMemory(int **p) {
+    *p = (int*)malloc(sizeof(int)); // Modify the caller's pointer
+    if (*p != NULL) {
+        **p = 50;
+    }
+}
+
+int main() {
+    int *myPtr = NULL;
+    allocateMemory(&myPtr); // Pass address of the pointer
+    if (myPtr != NULL) {
+        printf("Allocated value: %d\n", *myPtr); // Output: 50
+        free(myPtr); // Don't forget to free!
+    }
+    return 0;
+}</code></pre>
+
+            <h3>Void Pointers (<code>void*</code>)</h3>
+            <p>A <code>void*</code> is a generic pointer that can hold the address of any data type. It cannot be dereferenced directly; you must cast it to a specific pointer type first. It's often used in functions that work with different data types (like <code>malloc</code>, <code>free</code>, <code>qsort</code>).</p>
+            <pre><code>int x = 10;
+float y = 3.14f;
+void *gp;
+
+gp = &x;
+printf("Value of x: %d\n", *(int*)gp); // Cast to int* before dereferencing
+
+gp = &y;
+printf("Value of y: %f\n", *(float*)gp); // Cast to float* before dereferencing</code></pre>
+
+            <h3>Function Pointers</h3>
+            <p>You can have pointers that store the memory address of a function. This allows passing functions as arguments or storing them in data structures.</p>
+            <pre><code>#include &lt;stdio.h&gt;
+
+int add(int a, int b) { return a + b; }
+int subtract(int a, int b) { return a - b; }
+
+int main() {
+    // Declare a function pointer 'op' that can point to functions
+    // taking two ints and returning an int.
+    int (*op)(int, int);
+
+    op = add; // Point to the add function
+    printf("Addition: %d\n", op(5, 3)); // Call function via pointer
+
+    op = subtract; // Point to the subtract function
+    printf("Subtraction: %d\n", op(5, 3)); // Call function via pointer
+
+    return 0;
+}</code></pre>
+
+            <h3><code>const</code> and Pointers</h3>
+            <p>The <code>const</code> keyword can interact with pointers in several ways:</p>
+            <ul>
+                <li><code>const int *p;</code> or <code>int const *p;</code>: Pointer to a constant integer. You cannot change the value *pointed to* through <code>p</code>, but you can change `p` itself to point elsewhere.</li>
+                <li><code>int * const p;</code>: Constant pointer to an integer. You cannot change the pointer `p` to point to a different address, but you *can* change the value at the address it points to.</li>
+                <li><code>const int * const p;</code>: Constant pointer to a constant integer. You can change neither the pointer nor the value it points to.</li>
+            </ul>
+        </section>
+
+        <hr>
+
+        <!-- MCQ Section -->
+        <section id="mcqs">
+            <h2>MCQ Problems</h2>
+            <ol>
+                <!-- Q1 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int var = 10;
+    int *ptr = &var;
+    *ptr = 20;
+    printf("%d\n", var);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output of the following code?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q1" value="a"> 10</label>
+                        <label><input type="radio" name="q1" value="b"> 20</label>
+                        <label><input type="radio" name="q1" value="c"> Garbage Value</label>
+                        <label><input type="radio" name="q1" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 20</strong></p>
+                        <p>Explanation: <code>ptr</code> holds the address of <code>var</code>. <code>*ptr = 20;</code> dereferences the pointer and assigns the value 20 to the memory location pointed to by <code>ptr</code>, which is the location of <code>var</code>. Therefore, the value of <code>var</code> is changed to 20.</p>
+                    </div>
+                </li>
+
+                <!-- Q2 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[] = {1, 2, 3, 4, 5};
+    int *ptr = arr;
+    printf("%d\n", *(ptr + 2));
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q2" value="a"> 1</label>
+                        <label><input type="radio" name="q2" value="b"> 2</label>
+                        <label><input type="radio" name="q2" value="c"> 3</label>
+                        <label><input type="radio" name="q2" value="d"> Address of arr[2]</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 3</strong></p>
+                        <p>Explanation: <code>ptr</code> points to the first element of <code>arr</code> (value 1). <code>ptr + 2</code> performs pointer arithmetic, moving the pointer two integer positions forward to point to the element at index 2 (value 3). <code>*(ptr + 2)</code> dereferences this pointer, yielding the value 3.</p>
+                    </div>
+                </li>
+
+                 <!-- Q3 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 5;
+    int *p = &x;
+    int **q = &p;
+    int ***r = &q;
+    printf("%d\n", ***r);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q3" value="a"> Address of x</label>
+                        <label><input type="radio" name="q3" value="b"> Address of p</label>
+                        <label><input type="radio" name="q3" value="c"> 5</label>
+                        <label><input type="radio" name="q3" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 5</strong></p>
+                        <p>Explanation: <code>r</code> points to <code>q</code>, <code>q</code> points to <code>p</code>, and <code>p</code> points to <code>x</code>. Each dereference (<code>*</code>) follows the pointer to the next level. <code>*r</code> gives <code>q</code>. <code>**r</code> gives <code>*q</code> which is <code>p</code>. <code>***r</code> gives <code>*p</code> which is the value of <code>x</code> (5).</p>
+                    </div>
+                </li>
+
+                <!-- Q4 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    char str[] = "Hello";
+    char *ptr = str;
+    ptr++;
+    printf("%s\n", ptr);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q4" value="a"> Hello</label>
+                        <label><input type="radio" name="q4" value="b"> ello</label>
+                        <label><input type="radio" name="q4" value="c"> H</label>
+                        <label><input type="radio" name="q4" value="d"> Segmentation fault</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) ello</strong></p>
+                        <p>Explanation: <code>ptr</code> initially points to 'H'. <code>ptr++</code> increments the pointer to point to the next character, 'e'. When <code>printf("%s", ptr)</code> is called, it starts printing the string from the character pointed to by <code>ptr</code> until it encounters the null terminator (<code>\0</code>).</p>
+                    </div>
+                </li>
+
+                <!-- Q5 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+void modify(int *px) {
+    *px = *px * 2;
+}
+int main() {
+    int x = 10;
+    modify(&x);
+    printf("%d\n", x);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q5" value="a"> 10</label>
+                        <label><input type="radio" name="q5" value="b"> 20</label>
+                        <label><input type="radio" name="q5" value="c"> Garbage Value</label>
+                        <label><input type="radio" name="q5" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 20</strong></p>
+                        <p>Explanation: The address of <code>x</code> is passed to the <code>modify</code> function. Inside <code>modify</code>, <code>px</code> holds the address of <code>x</code>. <code>*px = *px * 2;</code> dereferences <code>px</code> (accessing <code>x</code>'s value), multiplies it by 2, and stores the result back into the memory location of <code>x</code>. This changes the original <code>x</code> in <code>main</code>.</p>
+                    </div>
+                </li>
+
+                <!-- Q6 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int a = 10, b = 20;
+    int *p1 = &a, *p2 = &b;
+    int temp = *p1;
+    *p1 = *p2;
+    *p2 = temp;
+    printf("a = %d, b = %d\n", a, b);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q6" value="a"> a = 10, b = 20</label>
+                        <label><input type="radio" name="q6" value="b"> a = 20, b = 10</label>
+                        <label><input type="radio" name="q6" value="c"> a = 20, b = 20</label>
+                        <label><input type="radio" name="q6" value="d"> a = 10, b = 10</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) a = 20, b = 10</strong></p>
+                        <p>Explanation: This code swaps the *values* of <code>a</code> and <code>b</code> using pointers.
+                        <code>p1</code> points to <code>a</code>, <code>p2</code> points to <code>b</code>.
+                        <code>temp = *p1;</code> (temp = 10).
+                        <code>*p1 = *p2;</code> (value at address of <code>a</code> becomes value at address of <code>b</code>, so a = 20).
+                        <code>*p2 = temp;</code> (value at address of <code>b</code> becomes temp, so b = 10).</p>
+                    </div>
+                </li>
+
+                 <!-- Q7 -->
+                 <li>
+                    <p><strong>Which statement correctly declares a pointer to a constant integer?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q7" value="a"> <code>int * const ptr;</code></label>
+                        <label><input type="radio" name="q7" value="b"> <code>const int * ptr;</code></label>
+                        <label><input type="radio" name="q7" value="c"> <code>int const * const ptr;</code></label>
+                        <label><input type="radio" name="q7" value="d"> <code>const * int ptr;</code></label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) <code>const int * ptr;</code></strong></p>
+                        <p>Explanation: Read declarations from right to left.
+                        <code>const int * ptr;</code> means "ptr is a pointer (<code>*</code>) to an integer (<code>int</code>) which is constant (<code>const</code>)". The value pointed to cannot be changed via this pointer. <code>int const * ptr;</code> is equivalent.
+                        <code>int * const ptr;</code> means "ptr is a constant pointer (<code>* const</code>) to an integer (<code>int</code>)". The pointer itself cannot be changed, but the value it points to can.
+                        <code>const int * const ptr;</code> means "ptr is a constant pointer to a constant integer". Neither can be changed.</p>
+                    </div>
+                </li>
+
+                 <!-- Q8 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[] = {10, 20, 30, 40, 50};
+    int *ptr = arr + 4;
+    printf("%d ", *ptr);
+    ptr--;
+    printf("%d\n", *ptr);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q8" value="a"> 50 40</label>
+                        <label><input type="radio" name="q8" value="b"> 40 30</label>
+                        <label><input type="radio" name="q8" value="c"> 50 50</label>
+                        <label><input type="radio" name="q8" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: a) 50 40</strong></p>
+                        <p>Explanation: <code>arr + 4</code> points to the element at index 4 (value 50). <code>ptr</code> is initialized to this address. <code>*ptr</code> prints 50. <code>ptr--</code> decrements the pointer, making it point to the element at index 3 (value 40). <code>*ptr</code> then prints 40.</p>
+                    </div>
+                </li>
+
+                <!-- Q9 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    char *str = "World";
+    printf("%c\n", *str+1);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q9" value="a"> W</label>
+                        <label><input type="radio" name="q9" value="b"> o</label>
+                        <label><input type="radio" name="q9" value="c"> X</label>
+                        <label><input type="radio" name="q9" value="d"> Segmentation Fault</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) X</strong></p>
+                        <p>Explanation: <code>*str</code> dereferences the pointer, giving the character 'W'. <code>*str + 1</code> adds 1 to the ASCII value of 'W'. The ASCII value of 'W' is 87. 87 + 1 = 88, which is the ASCII value for 'X'. <code>printf("%c", ...)</code> prints the character corresponding to the ASCII value 88. Contrast this with <code>*(str+1)</code> which would print 'o'.</p>
+                    </div>
+                </li>
+
+                <!-- Q10 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt; // For NULL
+int main() {
+    int *ptr = NULL;
+    printf("%d\n", *ptr); // Potential Issue Here
+    return 0;
+}</code></pre>
+                    <p><strong>What is the most likely outcome of running this code?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q10" value="a"> Prints 0</label>
+                        <label><input type="radio" name="q10" value="b"> Prints a garbage value</label>
+                        <label><input type="radio" name="q10" value="c"> Compilation Error</label>
+                        <label><input type="radio" name="q10" value="d"> Runtime Error (Segmentation Fault)</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) Runtime Error (Segmentation Fault)</strong></p>
+                        <p>Explanation: The code attempts to dereference a <code>NULL</code> pointer (<code>*ptr</code>). Accessing memory address 0 (or whatever NULL represents on the system) is typically forbidden by the operating system for memory protection. This usually results in a runtime crash, often reported as a "Segmentation Fault" or "Access Violation".</p>
+                    </div>
+                </li>
+
+                <!-- Q11 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[3] = {10, 20, 30};
+    int *p = arr;
+    printf("%d %d %d\n", *p++, *p++, *p++);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q11" value="a"> 10 20 30</label>
+                        <label><input type="radio" name="q11" value="b"> 30 20 10</label>
+                        <label><input type="radio" name="q11" value="c"> 10 10 10</label>
+                        <label><input type="radio" name="q11" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) Undefined Behavior</strong></p>
+                        <p>Explanation: The order of evaluation of function arguments is unspecified in C. The compiler is free to evaluate <code>*p++</code>, <code>*p++</code>, and <code>*p++</code> in any order. Furthermore, modifying the same variable (<code>p</code>) multiple times between sequence points without a defined order leads to undefined behavior. The output could be anything (like 30 20 10 on some compilers, or something else entirely) and cannot be relied upon.</p>
+                    </div>
+                </li>
+
+                <!-- Q12 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 10;
+    void *vp = &x;
+    // printf("%d\n", *vp); // This would cause a compilation error
+    printf("%d\n", *(int*)vp);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q12" value="a"> Compilation Error</label>
+                        <label><input type="radio" name="q12" value="b"> 10</label>
+                        <label><input type="radio" name="q12" value="c"> Address of x</label>
+                        <label><input type="radio" name="q12" value="d"> Garbage Value</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 10</strong></p>
+                        <p>Explanation: <code>vp</code> is a void pointer holding the address of <code>x</code>. Void pointers cannot be dereferenced directly. The expression <code>*(int*)vp</code> first casts <code>vp</code> to an integer pointer (<code>int*</code>) and then dereferences it (<code>*</code>), correctly retrieving the integer value 10 stored at that address.</p>
+                    </div>
+                </li>
+
+                 <!-- Q13 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int a = 5, b = 3;
+    printf("%d\n", a+++++b); // Tricky spacing and operators
+    return 0;
+}</code></pre>
+                    <p><strong>What is the outcome?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q13" value="a"> Output: 8</label>
+                        <label><input type="radio" name="q13" value="b"> Output: 9</label>
+                        <label><input type="radio" name="q13" value="c"> Compilation Error</label>
+                        <label><input type="radio" name="q13" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) Compilation Error</strong></p>
+                        <p>Explanation: The expression <code>a+++++b</code> is parsed according to the maximal munch rule. The compiler reads the longest possible token first. It sees <code>a++</code> (post-increment), then <code>++b</code> (pre-increment). The expression becomes <code>(a++) + (++b)</code>. However, the C standard states that the operand of the prefix/postfix increment/decrement operators must be an l-value (something that can appear on the left side of an assignment, like a variable). The result of <code>a++</code> is the *original value* of <code>a</code> (5), which is an r-value (a temporary value), not an l-value. Therefore, applying pre-increment <code>++</code> to the result of <code>a++</code> is illegal. Most compilers will flag this as an error like "lvalue required as increment operand".
+                        Even if parsed as <code>a++ + ++b</code>, there's still the issue of modifying `a` and `b` within the same expression without sequence points, leading to potential undefined behavior if the compiler allowed it, but the primary issue is the l-value requirement failure.</p>
+                        <p><em>Note: If it were written as <code>a++ + ++b</code> explicitly (with spaces), it might compile on some compilers, but the order of evaluation and side effects would still make the result potentially undefined or compiler-dependent. The most direct interpretation <code>a+++++b</code> leads to the parsing error.</em></p>
+                     </div>
+                 </li>
+
+
+                <!-- Q14 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 10;
+    int * const ptr = &x;
+    *ptr = 15; // Is this valid?
+    // ptr = &y; // Some other variable y - this would be invalid
+    printf("%d\n", x);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q14" value="a"> 10</label>
+                        <label><input type="radio" name="q14" value="b"> 15</label>
+                        <label><input type="radio" name="q14" value="c"> Compilation Error on line *ptr = 15;</label>
+                        <label><input type="radio" name="q14" value="d"> Compilation Error on ptr declaration</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 15</strong></p>
+                        <p>Explanation: <code>int * const ptr = &x;</code> declares <code>ptr</code> as a *constant pointer* to an integer. This means the pointer <code>ptr</code> itself cannot be reassigned to point to a different memory location after initialization. However, the *value* at the memory location it points to (the value of <code>x</code>) *can* be modified through the pointer. So, <code>*ptr = 15;</code> is valid and changes <code>x</code> to 15.</p>
+                    </div>
+                </li>
+
+                <!-- Q15 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    const int x = 10;
+    int *ptr = (int*)&x; // Casting away const-ness
+    *ptr = 15;
+    printf("%d\n", x);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the most accurate description of the behavior?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q15" value="a"> Prints 15 reliably.</label>
+                        <label><input type="radio" name="q15" value="b"> Prints 10 reliably.</label>
+                        <label><input type="radio" name="q15" value="c"> Compilation Error.</label>
+                        <label><input type="radio" name="q15" value="d"> Undefined Behavior.</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) Undefined Behavior</strong></p>
+                        <p>Explanation: The variable <code>x</code> is declared as <code>const</code>, meaning the programmer intends for its value not to change after initialization. Casting away the <code>const</code> qualifier using <code>(int*)&x</code> and then attempting to modify the value through the resulting pointer (<code>*ptr = 15;</code>) results in undefined behavior according to the C standard. The compiler might place <code>x</code> in read-only memory, causing a crash. Alternatively, the compiler might perform optimizations assuming <code>x</code> is always 10, leading to unexpected output (like printing 10 even after the modification attempt). It might appear to work on some specific compiler/optimization level/OS combinations, but it is not guaranteed and should never be done.</p>
+                    </div>
+                </li>
+
+                <!-- Q16 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[] = {1, 2, 3, 4, 5};
+    printf("%td\n", (arr + 3) - arr); // Note: %td for ptrdiff_t
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q16" value="a"> 3 * sizeof(int)</label>
+                        <label><input type="radio" name="q16" value="b"> 3</label>
+                        <label><input type="radio" name="q16" value="c"> Address of arr[3]</label>
+                        <label><input type="radio" name="q16" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 3</strong></p>
+                        <p>Explanation: Subtracting two pointers that point into the same array results in the number of elements between them. <code>arr</code> decays to a pointer to the first element (<code>&arr[0]</code>). <code>arr + 3</code> points to the element at index 3 (<code>&arr[3]</code>). The difference <code>(arr + 3) - arr</code> calculates how many elements are between these two pointers, which is 3. The result type is <code>ptrdiff_t</code>, correctly printed using <code>%td</code>.</p>
+                    </div>
+                </li>
+
+                <!-- Q17 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    char *ptr = "C Programming";
+    // ptr[0] = 'J'; // Attempting to modify string literal
+    printf("%s\n", ptr);
+    return 0;
+}</code></pre>
+                    <p><strong>What happens if the commented-out line <code>ptr[0] = 'J';</code> is uncommented and executed?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q17" value="a"> Prints "J Programming" reliably.</label>
+                        <label><input type="radio" name="q17" value="b"> Compilation Error.</label>
+                        <label><input type="radio" name="q17" value="c"> Undefined Behavior (likely crash/segmentation fault).</label>
+                        <label><input type="radio" name="q17" value="d"> Prints "C Programming" (modification ignored).</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) Undefined Behavior (likely crash/segmentation fault).</strong></p>
+                        <p>Explanation: String literals like <code>"C Programming"</code> are often stored in a read-only section of memory. <code>ptr</code> points to the first character of this read-only string. Attempting to modify the contents of a string literal through a pointer (<code>ptr[0] = 'J';</code> is equivalent to <code>*(ptr+0) = 'J';</code>) leads to undefined behavior. On many systems, this will result in a segmentation fault at runtime because the program tries to write to read-only memory.</p>
+                    </div>
+                </li>
+
+                 <!-- Q18 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[5] = {1, 2, 3}; // Partially initialized
+    int *ptr = arr + 3;
+    printf("%d\n", *ptr);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q18" value="a"> 3</label>
+                        <label><input type="radio" name="q18" value="b"> Garbage Value</label>
+                        <label><input type="radio" name="q18" value="c"> 0</label>
+                        <label><input type="radio" name="q18" value="d"> Segmentation Fault</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 0</strong></p>
+                        <p>Explanation: When an array with static or automatic storage duration is partially initialized, the remaining elements are automatically initialized to zero. Here, <code>arr[0]=1</code>, <code>arr[1]=2</code>, <code>arr[2]=3</code>. Elements <code>arr[3]</code> and <code>arr[4]</code> are initialized to 0. <code>ptr = arr + 3</code> points to <code>arr[3]</code>. Dereferencing it (<code>*ptr</code>) yields the value 0.</p>
+                    </div>
+                </li>
+
+                <!-- Q19 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int num = 10;
+    int *p1 = &num;
+    int **p2 = &p1;
+    printf("Address of num = %p\n", (void*)&num);
+    printf("Value in p1 = %p\n", (void*)p1);
+    printf("Value in p2 = %p\n", (void*)p2);
+    printf("Value pointed by p2 = %p\n", (void*)*p2);
+    printf("Value pointed by *p2 = %d\n", **p2);
+    return 0;
+}</code></pre>
+                    <p><strong>Which two printf statements will likely print the same address?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q19" value="a"> 1st and 2nd</label>
+                        <label><input type="radio" name="q19" value="b"> 2nd and 3rd</label>
+                        <label><input type="radio" name="q19" value="c"> 1st and 4th</label>
+                        <label><input type="radio" name="q19" value="d"> 3rd and 4th</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 1st and 4th</strong></p>
+                        <p>Explanation:
+                        1. <code>&num</code>: Address of the variable <code>num</code>.
+                        2. <code>p1</code>: Stores the address of <code>num</code>. So, <code>p1 == &num</code>.
+                        3. <code>p2</code>: Stores the address of the pointer <code>p1</code>. So, <code>p2 == &p1</code>.
+                        4. <code>*p2</code>: Dereferences <code>p2</code>, giving the value stored at the address <code>p2</code> (which is the address of <code>p1</code>). The value stored in <code>p1</code> is the address of <code>num</code>. So, <code>*p2 == p1 == &num</code>.
+                        5. <code>**p2</code>: Dereferences <code>*p2</code> (which is <code>p1</code>), giving the value stored at the address <code>p1</code> points to. So, <code>**p2 == *p1 == num</code> (which is 10).
+                        Therefore, the 1st printf (<code>&num</code>) and the 4th printf (<code>*p2</code>) will print the same address (the address of <code>num</code>).</p>
+                    </div>
+                </li>
+
+                <!-- Q20 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int i = 3;
+    int *j = &i;
+    int **k = &j;
+    // Which expression evaluates to the value 3?
+}</code></pre>
+                    <p><strong>Which expression evaluates to the value 3?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q20" value="a"> <code>*k</code></label>
+                        <label><input type="radio" name="q20" value="b"> <code>*j</code></label>
+                        <label><input type="radio" name="q20" value="c"> <code>&j</code></label>
+                        <label><input type="radio" name="q20" value="d"> <code>k</code></label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) <code>*j</code></strong></p>
+                        <p>Explanation:
+                        <code>i</code> = 3.
+                        <code>j</code> points to <code>i</code>. So <code>j = &i</code>.
+                        <code>k</code> points to <code>j</code>. So <code>k = &j</code>.
+                        <code>*j</code>: Dereferences <code>j</code>, giving the value at the address <code>j</code> points to (which is <code>i</code>). So <code>*j == i == 3</code>.
+                        <code>*k</code>: Dereferences <code>k</code>, giving the value at the address <code>k</code> points to (which is <code>j</code>). So <code>*k == j == &i</code> (an address).
+                        <code>&j</code>: The address of the pointer variable <code>j</code>. So <code>&j == k</code> (an address).
+                        <code>k</code>: The value of <code>k</code>, which is the address of <code>j</code> (an address).
+                        Therefore, only <code>*j</code> evaluates to 3.</p>
+                    </div>
+                </li>
+
+                <!-- Add more questions following the same pattern -->
+                <!-- Q21 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[] = {1, 2, 3, 4, 5};
+    printf("%d\n", 2[arr]); // Unusual array indexing
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q21" value="a"> 1</label>
+                        <label><input type="radio" name="q21" value="b"> 2</label>
+                        <label><input type="radio" name="q21" value="c"> 3</label>
+                        <label><input type="radio" name="q21" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 3</strong></p>
+                        <p>Explanation: In C, the array subscript operator <code>a[i]</code> is defined as being equivalent to <code>*(a + i)</code>. Because addition is commutative, <code>*(a + i)</code> is the same as <code>*(i + a)</code>. This second form is equivalent to <code>i[a]</code>. Therefore, <code>arr[2]</code> is the same as <code>2[arr]</code>. Both access the element at index 2 of the array <code>arr</code>, which has the value 3.</p>
+                    </div>
+                </li>
+
+
+                <!-- Q22 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    float f = 3.14;
+    float *fp = &f;
+    char *cp = (char*)fp; // Reinterpreting float pointer as char pointer
+    printf("%f %c\n", *fp, *cp); // Dereferencing both
+    return 0;
+}</code></pre>
+                    <p><strong>What is the most likely output for <code>*cp</code>?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q22" value="a"> '.' (dot character)</label>
+                        <label><input type="radio" name="q22" value="b"> '3'</label>
+                        <label><input type="radio" name="q22" value="c"> A non-printable character or unexpected character</label>
+                        <label><input type="radio" name="q22" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) A non-printable character or unexpected character</strong></p>
+                        <p>Explanation: Floating-point numbers (like 3.14) are stored in memory using a specific binary format (e.g., IEEE 754). Casting the <code>float*</code> to a <code>char*</code> makes <code>cp</code> point to the first byte of the float's memory representation. Dereferencing <code>cp</code> (<code>*cp</code>) reads only that single byte and interprets it as an ASCII character. The first byte of the binary representation of 3.14f does not typically correspond to a printable ASCII character like '3' or '.'. The exact byte value depends on the system's endianness and the specific float representation, but it's highly unlikely to be a standard printable character. The output for <code>*fp</code> will be 3.140000 (or similar float representation).</p>
+                    </div>
+                </li>
+
+                <!-- Q23 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 0;
+    int y = x++ + ++x; // Sequence point issue
+    printf("%d %d\n", x, y);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q23" value="a"> x=2, y=1</label>
+                        <label><input type="radio" name="q23" value="b"> x=2, y=2</label>
+                        <label><input type="radio" name="q23" value="c"> x=1, y=1</label>
+                        <label><input type="radio" name="q23" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) Undefined Behavior</strong></p>
+                        <p>Explanation: The expression <code>x++ + ++x</code> modifies the variable <code>x</code> twice between sequence points (the <code>+</code> operator is not a sequence point). The order in which <code>x++</code> (use <code>x</code> then increment) and <code>++x</code> (increment <code>x</code> then use) are evaluated relative to each other is unspecified. This leads to undefined behavior. Different compilers or optimization levels might produce different results (e.g., <code>x=2, y=1</code> or <code>x=2, y=2</code>), but none can be relied upon.</p>
+                    </div>
+                </li>
+
+                <!-- Q24 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[2][3] = {{1, 2, 3}, {4, 5, 6}};
+    int *ptr = (int*)arr; // Treat 2D array as 1D
+    printf("%d\n", *(ptr + 4));
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q24" value="a"> 4</label>
+                        <label><input type="radio" name="q24" value="b"> 5</label>
+                        <label><input type="radio" name="q24" value="c"> 6</label>
+                        <label><input type="radio" name="q24" value="d"> Address value</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 5</strong></p>
+                        <p>Explanation: A 2D array like <code>arr[2][3]</code> is stored contiguously in memory, row by row: {1, 2, 3, 4, 5, 6}. Casting <code>arr</code> to <code>(int*)</code> makes <code>ptr</code> point to the very first element (1). Pointer arithmetic on <code>ptr</code> treats the memory as a flat, 1D array of integers. <code>ptr + 4</code> moves the pointer 4 integer positions forward from the start. The elements are at indices 0, 1, 2, 3, 4, 5. So, <code>ptr + 4</code> points to the element at index 4, which is 5. Dereferencing it yields 5.</p>
+                    </div>
+                </li>
+
+                <!-- Q25 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int a = 1;
+    int b = sizeof(a++); // sizeof is evaluated at compile time
+    printf("a = %d, b = %d\n", a, b);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q25" value="a"> a = 2, b = 4 (or sizeof(int))</label>
+                        <label><input type="radio" name="q25" value="b"> a = 1, b = 4 (or sizeof(int))</label>
+                        <label><input type="radio" name="q25" value="c"> a = 1, b = 1</label>
+                        <label><input type="radio" name="q25" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) a = 1, b = 4 (or sizeof(int))</strong></p>
+                        <p>Explanation: The <code>sizeof</code> operator, when applied to an expression (not a VLA - Variable Length Array), determines the size of the *type* of the expression at compile time. Crucially, the expression itself is *not evaluated* at runtime. Therefore, <code>a++</code> inside <code>sizeof(a++)</code> is never executed. The type of the expression <code>a++</code> is <code>int</code>, so <code>sizeof(a++)</code> resolves to <code>sizeof(int)</code>, which is typically 4 on many systems. Since <code>a++</code> is not evaluated, the value of <code>a</code> remains 1.</p>
+                    </div>
+                </li>
+
+                 <!-- Q26 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    char s1[] = "Hello";
+    char s2[] = "Hello";
+    char *s3 = "Hello";
+    char *s4 = "Hello";
+
+    if (s1 == s2) printf("s1 == s2\n"); else printf("s1 != s2\n");
+    if (s3 == s4) printf("s3 == s4\n"); else printf("s3 != s4\n");
+
+    return 0;
+}</code></pre>
+                    <p><strong>What is the likely output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q26" value="a"> s1 == s2<br>s3 == s4</label>
+                        <label><input type="radio" name="q26" value="b"> s1 != s2<br>s3 != s4</label>
+                        <label><input type="radio" name="q26" value="c"> s1 == s2<br>s3 != s4</label>
+                        <label><input type="radio" name="q26" value="d"> s1 != s2<br>s3 == s4</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) s1 != s2<br>s3 == s4</strong></p>
+                        <p>Explanation:
+                        <code>s1</code> and <code>s2</code> are declared as arrays initialized with the string "Hello". This creates two separate arrays in memory, each containing a copy of the string (including the null terminator). Comparing <code>s1 == s2</code> compares the base addresses of these two distinct arrays, which will be different. Thus, <code>s1 != s2</code>.
+                        <code>s3</code> and <code>s4</code> are declared as pointers initialized to point to the string literal "Hello". Compilers are allowed (and often do) to store identical string literals only once in a read-only memory section. Therefore, <code>s3</code> and <code>s4</code> will likely point to the *same* memory location containing the single instance of "Hello". Comparing <code>s3 == s4</code> compares these pointer values (addresses), which will be the same. Thus, <code>s3 == s4</code>.</p>
+                    </div>
+                </li>
+
+                <!-- Q27 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 5;
+    printf("%d %d %d\n", x, x << 1, x >> 1); // Order of evaluation matters
+    return 0;
+}</code></pre>
+                    <p><strong>What is a possible output? (Assume int is 32-bit)</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q27" value="a"> 5 10 2</label>
+                        <label><input type="radio" name="q27" value="b"> 2 10 5</label>
+                        <label><input type="radio" name="q27" value="c"> 10 2 5</label>
+                        <label><input type="radio" name="q27" value="d"> The output depends on the evaluation order of arguments.</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) The output depends on the evaluation order of arguments.</strong></p>
+                        <p>Explanation: Similar to Q11 and Q23, the order in which function arguments are evaluated is unspecified in C. The compiler could evaluate <code>x</code>, then <code>x << 1</code> (10), then <code>x >> 1</code> (2), printing "5 10 2". Or it could evaluate them right-to-left, printing "2 10 5". Or some other order. Because the expressions themselves don't modify <code>x</code> (unlike <code>x++</code>), the behavior isn't undefined, but the output order is *unspecified*. While "5 10 2" is a common result due to typical right-to-left stack pushing, it's not guaranteed by the standard.</p>
+                    </div>
+                </li>
+
+                <!-- Q28 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int a[5] = {1, 2, 3, 4, 5};
+    int *p = a;
+    int *q = &a[5]; // Pointer just past the end
+    printf("%td\n", q - p); // Note: %td for ptrdiff_t
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q28" value="a"> 4</label>
+                        <label><input type="radio" name="q28" value="b"> 5</label>
+                        <label><input type="radio" name="q28" value="c"> 6</label>
+                        <label><input type="radio" name="q28" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 5</strong></p>
+                        <p>Explanation: <code>p</code> points to <code>a[0]</code>. It's valid in C to form a pointer that points one element *past* the end of an array (<code>&a[5]</code> in this case). You cannot dereference this pointer (<code>*q</code> would be undefined behavior), but you can use it for pointer arithmetic comparisons within the bounds of the original array allocation. <code>q</code> points just after <code>a[4]</code>. The difference <code>q - p</code> calculates the number of elements between <code>p</code> (index 0) and <code>q</code> (conceptually index 5), which is 5.</p>
+                    </div>
+                </li>
+
+                <!-- Q29 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int num = 10;
+    int *ptr1 = &num;
+    int *ptr2 = ptr1++; // Post-increment pointer
+    printf("%d %d\n", *ptr1, *ptr2);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the most likely outcome?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q29" value="a"> 10 10</label>
+                        <label><input type="radio" name="q29" value="b"> 11 10</label>
+                        <label><input type="radio" name="q29" value="c"> 10 (Garbage Value or Crash)</label>
+                        <label><input type="radio" name="q29" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 10 (Garbage Value or Crash)</strong></p>
+                        <p>Explanation:
+                        1. <code>ptr1</code> points to <code>num</code> (value 10).
+                        2. <code>ptr2 = ptr1++</code>: This is a post-increment. The *original* value of <code>ptr1</code> (the address of <code>num</code>) is assigned to <code>ptr2</code>. *After* the assignment, <code>ptr1</code> is incremented.
+                        3. Now, <code>ptr2</code> points to <code>num</code>. <code>*ptr2</code> will evaluate to 10.
+                        4. <code>ptr1</code>, however, has been incremented. It now points to the memory location *immediately after* <code>num</code> in memory. This location does not belong to <code>num</code> and contains an indeterminate value (garbage).
+                        5. Dereferencing <code>ptr1</code> (<code>*ptr1</code>) attempts to read this garbage value. Accessing memory just outside allocated variable space is technically undefined behavior, though it might appear to print a garbage value on some systems or could potentially crash if it crosses memory boundaries in certain ways.
+                        6. The most predictable part is that <code>*ptr2</code> will be 10. The value printed for <code>*ptr1</code> is unreliable and potentially dangerous.</p>
+                    </div>
+                </li>
+
+                <!-- Q30 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int i=10;
+    int *p = &i;
+    int *q = p;
+    *q = 5; // Modify value via q
+    printf("%d\n", *p);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q30" value="a"> 10</label>
+                        <label><input type="radio" name="q30" value="b"> 5</label>
+                        <label><input type="radio" name="q30" value="c"> Address of i</label>
+                        <label><input type="radio" name="q30" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 5</strong></p>
+                        <p>Explanation: <code>p</code> is assigned the address of <code>i</code>. <code>q</code> is assigned the same address that <code>p</code> holds (so <code>q</code> also points to <code>i</code>). <code>*q = 5;</code> dereferences <code>q</code> and changes the value at the memory location it points to (which is <code>i</code>) to 5. Since <code>p</code> still points to <code>i</code>, dereferencing <code>p</code> (<code>*p</code>) now retrieves the updated value of <code>i</code>, which is 5.</p>
+                    </div>
+                </li>
+                <!-- Q31 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = -5;
+    unsigned int y = 10;
+    if (x &lt; y) { // Comparison between signed and unsigned
+        printf("Less\n");
+    } else {
+        printf("Greater or Equal\n");
+    }
+    return 0;
+}</code></pre>
+                    <p><strong>What is the likely output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q31" value="a"> Less</label>
+                        <label><input type="radio" name="q31" value="b"> Greater or Equal</label>
+                        <label><input type="radio" name="q31" value="c"> Compilation Error</label>
+                        <label><input type="radio" name="q31" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) Greater or Equal</strong></p>
+                        <p>Explanation: When comparing a signed integer with an unsigned integer in C, the signed integer is implicitly converted to unsigned before the comparison (integer promotion rules). The signed value <code>-5</code>, when converted to an unsigned integer (assuming 32-bit ints), becomes a very large positive number (typically 2<sup>32</sup> - 5). This large unsigned value is then compared with the unsigned value 10. Since the large number is greater than 10, the condition <code>x < y</code> evaluates to false, and "Greater or Equal" is printed. This is a common pitfall when mixing signed and unsigned types in comparisons.</p>
+                    </div>
+                </li>
+
+                <!-- Q32 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    char arr[] = {'H', 'e', 'l', 'l', 'o', '\0'};
+    char *ptr = arr;
+    while (*ptr) {
+        printf("%c", (*ptr)++); // Post-increment the character value
+        // ptr++; // Pointer is NOT incremented here
+    }
+    printf("\nFinal string: %s\n", arr);
+    return 0;
+}</code></pre>
+                    <p><strong>What is printed by the while loop and what is the final string?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q32" value="a"> Loop: Hello, Final: Ifmmp</label>
+                        <label><input type="radio" name="q32" value="b"> Loop: H, Final: Iello (Infinite Loop)</label>
+                        <label><input type="radio" name="q32" value="c"> Loop: Hello, Final: Hello</label>
+                        <label><input type="radio" name="q32" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) Loop: H, Final: Iello (Infinite Loop)</strong></p>
+                        <p>Explanation:
+                        1. <code>ptr</code> points to <code>arr[0]</code> ('H').
+                        2. `while (*ptr)` checks if the character pointed to is non-null. 'H' is non-null.
+                        3. `(*ptr)++`: This dereferences `ptr` (gets 'H'), uses its value for `printf` (prints 'H'), and *then* increments the value *at that memory location*. So, `arr[0]` becomes 'I'.
+                        4. Crucially, the pointer <code>ptr</code> itself is *not* incremented in the loop.
+                        5. The loop condition `while (*ptr)` is checked again. <code>ptr</code> still points to `arr[0]`, which now holds 'I'. 'I' is non-null.
+                        6. The loop body executes again: prints 'I', increments `arr[0]` to 'J'.
+                        7. This continues indefinitely because `*ptr` (the character at `arr[0]`) is always non-null after being incremented. The loop never reaches the null terminator because `ptr` never advances.
+                        8. Therefore, the loop prints 'H', then 'I', 'J', 'K', ... and never stops. The final string `arr` would have 'I' (or whatever the last incremented value was) at index 0, followed by "ello". The most accurate description reflects the infinite loop starting after printing 'H'.</p>
+                        <p><em>Note: If the line was `printf("%c", *ptr++);`, it would print "Hello" and the final string would remain "Hello" because the increment would apply to the pointer AFTER the value was fetched for printf, but BEFORE the value in memory was changed. If it was `printf("%c", ++(*ptr));`, it would print "Ifmmp" and the final string would be "Ifmmp". The given code `printf("%c", (*ptr)++);` increments the value in memory *after* using the original value.</em></p>
+                    </div>
+                </li>
+
+                <!-- Q33 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x=1, y=1, z=1;
+    if (x = y == z) { // Assignment vs Comparison
+         printf("Equal\n");
+    } else {
+         printf("Not Equal\n");
+    }
+    printf("x=%d, y=%d, z=%d\n", x, y, z);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q33" value="a"> Equal<br>x=1, y=1, z=1</label>
+                        <label><input type="radio" name="q33" value="b"> Not Equal<br>x=0, y=1, z=1</label>
+                        <label><input type="radio" name="q33" value="c"> Equal<br>x=1, y=1, z=1 (with compiler warning)</label>
+                        <label><input type="radio" name="q33" value="d"> Not Equal<br>x=1, y=1, z=1</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) Equal<br>x=1, y=1, z=1 (with compiler warning)</strong></p>
+                        <p>Explanation: Operator precedence matters. The equality operator <code>==</code> has higher precedence than the assignment operator <code>=</code>.
+                        1. The expression <code>y == z</code> is evaluated first. Since <code>y</code> (1) is equal to <code>z</code> (1), this evaluates to the integer value 1 (true).
+                        2. The expression now becomes <code>x = 1</code>. This is an assignment. The value 1 is assigned to <code>x</code>.
+                        3. The result of an assignment expression is the value assigned. So, the result of <code>x = 1</code> is 1.
+                        4. The <code>if</code> statement checks the result, which is 1. In C, any non-zero value is treated as true in a boolean context.
+                        5. Therefore, the <code>if</code> block is executed, printing "Equal".
+                        6. After the <code>if</code> statement, <code>x</code> has been assigned the value 1 (it was already 1, but the assignment happened), and <code>y</code> and <code>z</code> remain 1.
+                        7. Most compilers will issue a warning for using an assignment as a truth value (e.g., "assignment used as truth value" or suggesting parentheses like <code>if ((x = y) == z)</code> or <code>if (x == (y == z))</code> if that was the intent).</p>
+                     </div>
+                 </li>
+
+                <!-- Q34 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[5];
+    printf("%p\n", (void*)arr);
+    printf("%p\n", (void*)&arr[0]);
+    printf("%p\n", (void*)&arr); // Address of the whole array
+    return 0;
+}</code></pre>
+                    <p><strong>What will be printed?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q34" value="a"> Three different addresses.</label>
+                        <label><input type="radio" name="q34" value="b"> The first two addresses are the same, the third is different.</label>
+                        <label><input type="radio" name="q34" value="c"> The last two addresses are the same, the first is different.</label>
+                        <label><input type="radio" name="q34" value="d"> All three addresses will be the same.</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) All three addresses will be the same.</strong></p>
+                        <p>Explanation:
+                        1. <code>arr</code>: When an array name is used in an expression (like being passed to printf after casting), it decays into a pointer to its first element. So, <code>(void*)arr</code> gives the address of <code>arr[0]</code>.
+                        2. <code>&arr[0]</code>: This explicitly takes the address of the first element of the array.
+                        3. <code>&arr</code>: This takes the address of the *entire array*. While the address value is numerically the same as the address of the first element (the array starts where its first element starts), the *type* is different. <code>&arr</code> has the type "pointer to an array of 5 integers" (<code>int (*)[5]</code>), whereas <code>arr</code> decays to "pointer to integer" (<code>int*</code>). However, when printed as a void pointer using <code>%p</code>, all three will display the same memory address – the starting location of the array.</p>
+                     </div>
+                </li>
+
+                <!-- Q35 -->
+                <li>
+                     <pre><code>#include &lt;stdio.h&gt;
+int main() {
+     int arr[5] = {10, 20, 30, 40, 50};
+     int *ptr = arr;
+     printf("%d\n", *++ptr); // Pre-increment pointer then dereference
+     return 0;
+ }</code></pre>
+                     <p><strong>What is the output?</strong></p>
+                     <div class="mcq-options">
+                         <label><input type="radio" name="q35" value="a"> 10</label>
+                         <label><input type="radio" name="q35" value="b"> 20</label>
+                         <label><input type="radio" name="q35" value="c"> Garbage Value</label>
+                         <label><input type="radio" name="q35" value="d"> Compilation Error</label>
+                     </div>
+                     <button class="toggle-explanation">Show/Hide Explanation</button>
+                     <div class="explanation">
+                         <p><strong>Answer: b) 20</strong></p>
+                         <p>Explanation: <code>ptr</code> initially points to <code>arr[0]</code> (value 10). The expression is <code>*++ptr</code>. Due to operator precedence (prefix <code>++</code> has higher precedence than dereference <code>*</code> and associates right-to-left), <code>++ptr</code> is evaluated first. This increments the pointer <code>ptr</code> to point to the next element, <code>arr[1]</code>. Then, the dereference operator <code>*</code> is applied to the *new* value of <code>ptr</code>. So, <code>*ptr</code> now accesses the value at <code>arr[1]</code>, which is 20.</p>
+                     </div>
+                 </li>
+
+                <!-- Q36 -->
+                 <li>
+                     <pre><code>#include &lt;stdio.h&gt;
+int main() {
+     int arr[5] = {10, 20, 30, 40, 50};
+     int *ptr = arr;
+     printf("%d\n", ++*ptr); // Increment value pointed to, then use
+     return 0;
+ }</code></pre>
+                     <p><strong>What is the output?</strong></p>
+                     <div class="mcq-options">
+                         <label><input type="radio" name="q36" value="a"> 10</label>
+                         <label><input type="radio" name="q36" value="b"> 11</label>
+                         <label><input type="radio" name="q36" value="c"> 20</label>
+                         <label><input type="radio" name="q36" value="d"> Compilation Error</label>
+                     </div>
+                     <button class="toggle-explanation">Show/Hide Explanation</button>
+                     <div class="explanation">
+                         <p><strong>Answer: b) 11</strong></p>
+                         <p>Explanation: <code>ptr</code> initially points to <code>arr[0]</code> (value 10). The expression is <code>++*ptr</code>. Dereference <code>*</code> and prefix <code>++</code> have the same precedence and associate right-to-left. So, <code>*ptr</code> is conceptually evaluated first, yielding the value at <code>arr[0]</code> (which is 10). Then, the prefix increment <code>++</code> is applied to this value. It increments the value 10 to 11 *before* the value is used in the larger expression (or in this case, used as the argument to printf). The value stored at <code>arr[0]</code> is also updated to 11. The value passed to printf is the incremented value, 11.</p>
+                     </div>
+                 </li>
+
+                <!-- Q37 -->
+                 <li>
+                     <pre><code>#include &lt;stdio.h&gt;
+int main() {
+     int arr[5] = {10, 20, 30, 40, 50};
+     int *ptr = arr;
+     printf("%d\n", (*ptr)++); // Use value pointed to, then increment value
+     printf("%d\n", *ptr); // Print the value again
+     return 0;
+ }</code></pre>
+                     <p><strong>What is the output?</strong></p>
+                     <div class="mcq-options">
+                         <label><input type="radio" name="q37" value="a"> 10<br>10</label>
+                         <label><input type="radio" name="q37" value="b"> 11<br>11</label>
+                         <label><input type="radio" name="q37" value="c"> 10<br>11</label>
+                         <label><input type="radio" name="q37" value="d"> 11<br>10</label>
+                     </div>
+                     <button class="toggle-explanation">Show/Hide Explanation</button>
+                     <div class="explanation">
+                         <p><strong>Answer: c) 10<br>11</strong></p>
+                         <p>Explanation: <code>ptr</code> initially points to <code>arr[0]</code> (value 10).
+                         1. <code>(*ptr)++</code>: The parentheses ensure <code>*ptr</code> is evaluated first, yielding the value 10. The post-increment <code>++</code> means the *original* value (10) is used as the result of the expression (passed to the first printf). *After* the value is used, the value stored at the memory location pointed to by <code>ptr</code> (i.e., <code>arr[0]</code>) is incremented to 11. So, the first printf prints 10.
+                         2. The second <code>printf("%d\n", *ptr);</code> executes. <code>ptr</code> still points to <code>arr[0]</code>. Dereferencing it now retrieves the *current* value stored in <code>arr[0]</code>, which is 11. So, the second printf prints 11.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q38 -->
+                 <li>
+                     <pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt; // For malloc/free
+
+int* createAndInit() {
+    int local_var = 100;
+    // return &local_var; // Problem: Returning address of local variable
+    int* ptr = (int*)malloc(sizeof(int));
+    if (ptr != NULL) {
+        *ptr = 100;
+    }
+    return ptr;
+}
+
+int main() {
+    int *p = createAndInit();
+    if (p != NULL) {
+        printf("%d\n", *p);
+        free(p); // Important!
+    }
+    return 0;
+}</code></pre>
+                     <p><strong>Assuming <code>malloc</code> succeeds, what does this code (as shown, without the commented-out line) output?</strong></p>
+                     <div class="mcq-options">
+                         <label><input type="radio" name="q38" value="a"> Garbage Value</label>
+                         <label><input type="radio" name="q38" value="b"> 100</label>
+                         <label><input type="radio" name="q38" value="c"> 0</label>
+                         <label><input type="radio" name="q38" value="d"> Segmentation Fault</label>
+                     </div>
+                     <button class="toggle-explanation">Show/Hide Explanation</button>
+                     <div class="explanation">
+                         <p><strong>Answer: b) 100</strong></p>
+                         <p>Explanation: The function <code>createAndInit</code> correctly allocates memory on the heap using <code>malloc</code>. This memory persists even after the function returns. It stores the value 100 in the allocated memory and returns the pointer <code>ptr</code> (which holds the address of the heap memory). In <code>main</code>, <code>p</code> receives this valid pointer. Dereferencing <code>p</code> (<code>*p</code>) correctly retrieves the value 100 stored on the heap. The memory is then properly released using <code>free(p)</code>. The commented-out line <code>return &local_var;</code> demonstrates the *wrong* way, as <code>local_var</code> exists on the stack and disappears when the function returns, leading to a dangling pointer and undefined behavior if that address were returned and used.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q39 -->
+                 <li>
+                     <pre><code>#include &lt;stdio.h&gt;
+int main(){
+    int x = printf("Hello"); // printf returns number of chars printed
+    printf(" %d\n", x);
+    return 0;
+}</code></pre>
+                     <p><strong>What is the output?</strong></p>
+                     <div class="mcq-options">
+                         <label><input type="radio" name="q39" value="a"> Hello 0</label>
+                         <label><input type="radio" name="q39" value="b"> Hello 1</label>
+                         <label><input type="radio" name="q39" value="c"> Hello 5</label>
+                         <label><input type="radio" name="q39" value="d"> Compilation Error</label>
+                     </div>
+                     <button class="toggle-explanation">Show/Hide Explanation</button>
+                     <div class="explanation">
+                         <p><strong>Answer: c) Hello 5</strong></p>
+                         <p>Explanation: The <code>printf</code> function returns the number of characters successfully printed to the output stream.
+                         1. `printf("Hello")` prints the string "Hello" to the console. The string "Hello" has 5 characters.
+                         2. The return value of this `printf` call (which is 5) is assigned to the integer variable `x`.
+                         3. The second `printf(" %d\n", x)` prints a space, followed by the value of `x` (which is 5), followed by a newline.
+                         4. The combined output is "Hello 5\n".</p>
+                     </div>
+                 </li>
+
+                <!-- Q40 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int a = 1, b = 2, c = 3;
+    int res = a > b ? a : b > c ? b : c; // Ternary operator associativity
+    printf("%d\n", res);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q40" value="a"> 1</label>
+                        <label><input type="radio" name="q40" value="b"> 2</label>
+                        <label><input type="radio" name="q40" value="c"> 3</label>
+                        <label><input type="radio" name="q40" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 3</strong></p>
+                        <p>Explanation: The ternary operator (<code>?:</code>) associates from right to left. However, its precedence is lower than comparison operators (<code>></code>). It's best understood with parentheses based on precedence and common interpretation (though associativity technically applies if chained differently):
+                        The expression is effectively parsed like this: <code>(a > b) ? a : (b > c ? b : c)</code>
+                        1. <code>a > b</code> (1 > 2) is false (0).
+                        2. Since the condition is false, the third part of the outer ternary operator is evaluated: <code>(b > c ? b : c)</code>.
+                        3. Inside this inner ternary: <code>b > c</code> (2 > 3) is false (0).
+                        4. Since the inner condition is false, its third part is evaluated: <code>c</code>.
+                        5. The value <code>c</code> (which is 3) is the result of the inner ternary.
+                        6. This result (3) becomes the result of the outer ternary operator (because its condition was false).
+                        7. <code>res</code> is assigned the value 3. </p>
+                        <p><em>Note: This structure finds the maximum of `b` and `c` only if `a` is not greater than `b`. It doesn't find the overall maximum. To find the max of three, you'd typically use `(a > b) ? ((a > c) ? a : c) : ((b > c) ? b : c)`.</em></p>
+                     </div>
+                 </li>
+
+                <!-- Q41 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    short int si = 32767; // Max value for signed short (usually)
+    si++;
+    printf("%d\n", si);
+    return 0;
+}</code></pre>
+                    <p><strong>Assuming <code>short int</code> is 16 bits, what is the most likely output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q41" value="a"> 32768</label>
+                        <label><input type="radio" name="q41" value="b"> -32768</label>
+                        <label><input type="radio" name="q41" value="c"> 0</label>
+                        <label><input type="radio" name="q41" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) -32768 (or d) Undefined Behavior)</strong></p>
+                        <p>Explanation: For a 16-bit signed short integer using two's complement representation, the maximum positive value is 2<sup>15</sup> - 1 = 32767. The minimum negative value is -2<sup>15</sup> = -32768.
+                        Incrementing the maximum positive value (32767) causes an overflow.
+                        According to the C standard, signed integer overflow results in <strong>undefined behavior</strong>.
+                        However, on *most* common systems using two's complement arithmetic, the bit pattern for 32767 (<code>0111 1111 1111 1111</code>) when incremented becomes <code>1000 0000 0000 0000</code>, which is the representation of the minimum negative value, -32768.
+                        So, while the standard says it's UB, the *common practical result* is -32768. For a test, understanding this wrap-around behavior is often expected, but knowing it's technically UB is also important. Answer (b) reflects the common behavior, answer (d) reflects the standard.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q42 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    unsigned short int usi = 65535; // Max value for unsigned short (usually)
+    usi++;
+    printf("%u\n", usi); // %u for unsigned
+    return 0;
+}</code></pre>
+                    <p><strong>Assuming <code>unsigned short int</code> is 16 bits, what is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q42" value="a"> 65536</label>
+                        <label><input type="radio" name="q42" value="b"> -1</label>
+                        <label><input type="radio" name="q42" value="c"> 0</label>
+                        <label><input type="radio" name="q42" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 0</strong></p>
+                        <p>Explanation: For a 16-bit unsigned short integer, the maximum value is 2<sup>16</sup> - 1 = 65535. Unlike signed overflow, unsigned integer overflow is well-defined by the C standard. Unsigned integers implement arithmetic modulo 2<sup>N</sup>, where N is the number of bits in the type.
+                        Incrementing the maximum value (65535, which is <code>1111 1111 1111 1111</code> in binary) causes it to wrap around. 65535 + 1 = 65536. Modulo 2<sup>16</sup> (65536), the result is 0. The bit pattern becomes <code>0000 0000 0000 0000</code>. Therefore, <code>usi</code> becomes 0.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q43 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[5] = {1, 2, 3, 4, 5};
+    int *p1 = arr;
+    int *p2 = arr + 5; // One past the end
+    // Is the comparison p1 < p2 valid?
+    if (p1 < p2) {
+        printf("p1 < p2 is Valid and True\n");
+    } else {
+        printf("p1 < p2 is Invalid or False\n");
+    }
+    return 0;
+}</code></pre>
+                    <p><strong>Is comparing <code>p1</code> and <code>p2</code> valid according to the C standard, and if so, what is the result?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q43" value="a"> Invalid comparison</label>
+                        <label><input type="radio" name="q43" value="b"> Valid, Result: False</label>
+                        <label><input type="radio" name="q43" value="c"> Valid, Result: True</label>
+                        <label><input type="radio" name="q43" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) Valid, Result: True</strong></p>
+                        <p>Explanation: The C standard allows pointers that point to elements of the same array object, or one past the end of the array object, to be compared using relational operators (<code><</code>, <code>></code>, <code><=</code>, <code>>=</code>). The result is as if the indices of the elements were compared.
+                        <code>p1</code> points to <code>arr[0]</code> (index 0).
+                        <code>p2</code> points one past the end (conceptually index 5).
+                        Since both pointers relate to the same array object <code>arr</code>, the comparison <code>p1 < p2</code> is valid. As index 0 is less than index 5, the comparison evaluates to true.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q44 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+int main() {
+    int *p1 = malloc(sizeof(int));
+    int *p2 = malloc(sizeof(int));
+    // Assume malloc succeeded for both
+    // Is comparing p1 and p2 using < or > guaranteed to be meaningful?
+    if (p1 < p2) { // Comparing unrelated pointers
+         printf("Compared\n");
+    }
+    free(p1);
+    free(p2);
+    return 0;
+}</code></pre>
+                    <p><strong>Is the comparison <code>p1 < p2</code> in this code guaranteed to yield a meaningful or portable result according to the C standard?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q44" value="a"> Yes, it reliably compares memory addresses.</label>
+                        <label><input type="radio" name="q44" value="b"> No, comparing pointers from different allocation calls with <code><</code> or <code>></code> is unspecified or undefined behavior.</label>
+                        <label><input type="radio" name="q44" value="c"> Yes, but only if they point to the same allocated block.</label>
+                        <label><input type="radio" name="q44" value="d"> It causes a compilation error.</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) No, comparing pointers from different allocation calls with <code><</code> or <code>></code> is unspecified or undefined behavior.</strong></p>
+                        <p>Explanation: The C standard only guarantees meaningful results for relational comparisons (<code><</code>, <code>></code>, <code><=</code>, <code>>=</code>) between pointers when they point into, or one past the end of, the *same* array object (or aggregate object). Pointers returned by separate calls to <code>malloc</code> point to distinct memory objects. Comparing them using relational operators has unspecified behavior (the result isn't guaranteed to be consistent or meaningful across different systems or even different runs). While the comparison might *happen* to work on a specific platform by comparing raw address values, it's not portable or guaranteed by the standard. Only equality comparison (<code>p1 == p2</code> or <code>p1 != p2</code>) is reliably defined for pointers from different objects (it will be false unless both are NULL or point to the exact same object).</p>
+                     </div>
+                 </li>
+
+                <!-- Q45 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int i = 0;
+    int result = i++ + i++ + i++; // UB
+    printf("i = %d, result = %d\n", i, result);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the behavior?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q45" value="a"> i = 3, result = 0</label>
+                        <label><input type="radio" name="q45" value="b"> i = 3, result = 3</label>
+                        <label><input type="radio" name="q45" value="c"> i = 3, result = 6</label>
+                        <label><input type="radio" name="q45" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) Undefined Behavior</strong></p>
+                        <p>Explanation: Similar to Q11 and Q23, this expression modifies the same variable <code>i</code> multiple times (three times via post-increment) without intervening sequence points (the <code>+</code> operator is not a sequence point). The order of evaluation of the operands and the exact timing of the side effects (the increments) are unspecified. This leads to undefined behavior. Any specific output observed is accidental and cannot be relied upon.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q46 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    const char *str = "Immutable";
+    // Which of the following is NOT allowed?
+    // A) char c = str[1];
+    // B) str = "New String";
+    // C) str[0] = 'X';
+}</code></pre>
+                    <p><strong>Which operation (A, B, or C) is NOT allowed or leads to undefined behavior?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q46" value="a"> A</label>
+                        <label><input type="radio" name="q46" value="b"> B</label>
+                        <label><input type="radio" name="q46" value="c"> C</label>
+                        <label><input type="radio" name="q46" value="d"> Both B and C</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) C</strong></p>
+                        <p>Explanation: <code>const char *str</code> declares <code>str</code> as a pointer to a constant character.
+                        A) <code>char c = str[1];</code> Reads the character at index 1 ('m'). This is allowed because we are only reading the data pointed to, not modifying it.
+                        B) <code>str = "New String";</code> Changes the pointer <code>str</code> itself to point to a different string literal. This is allowed because the pointer <code>str</code> is not constant; only the data it *points to* is considered constant *through this specific pointer*.
+                        C) <code>str[0] = 'X';</code> Attempts to modify the character at index 0 through the pointer <code>str</code>. This is disallowed because <code>str</code> is a pointer-to-<code>const char</code>. Attempting to modify the data it points to violates the <code>const</code> qualifier. Furthermore, since <code>str</code> points to a string literal, modifying it leads to undefined behavior (as seen in Q17), even if the <code>const</code> wasn't there. The <code>const</code> keyword should ideally cause a compilation error for this line.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q47 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    char arr[] = "Modifiable";
+    char * const ptr = arr; // Constant pointer
+    // Which of the following is NOT allowed?
+    // A) char c = ptr[1];
+    // B) ptr = arr + 1;
+    // C) ptr[0] = 'X';
+}</code></pre>
+                    <p><strong>Which operation (A, B, or C) is NOT allowed?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q47" value="a"> A</label>
+                        <label><input type="radio" name="q47" value="b"> B</label>
+                        <label><input type="radio" name="q47" value="c"> C</label>
+                        <label><input type="radio" name="q47" value="d"> Both B and C</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) B</strong></p>
+                        <p>Explanation: <code>char * const ptr = arr;</code> declares <code>ptr</code> as a constant pointer to a (modifiable) character.
+                        A) <code>char c = ptr[1];</code> Reads the character at index 1 ('o'). This is allowed.
+                        B) <code>ptr = arr + 1;</code> Attempts to change the pointer <code>ptr</code> itself to point to a different address (the second character of <code>arr</code>). This is disallowed because <code>ptr</code> is declared as a <code>const</code> pointer; it cannot be reassigned after initialization.
+                        C) <code>ptr[0] = 'X';</code> Attempts to modify the character at index 0 ('M') through the pointer <code>ptr</code>. This is allowed because <code>ptr</code> points to non-<code>const</code> character data (the array <code>arr</code> is modifiable), and only the pointer itself is constant, not the data it points to. This will change <code>arr</code> to "Xodifiable".</p>
+                     </div>
+                 </li>
+
+                 <!-- Q48 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int matrix[2][3] = {{1,2,3},{4,5,6}};
+    printf("%d\n", *(*(matrix + 1) + 2));
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q48" value="a"> 3</label>
+                        <label><input type="radio" name="q48" value="b"> 4</label>
+                        <label><input type="radio" name="q48" value="c"> 5</label>
+                        <label><input type="radio" name="q48" value="d"> 6</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) 6</strong></p>
+                        <p>Explanation: Let's break down <code>*(*(matrix + 1) + 2)</code>:
+                        1. <code>matrix</code>: The name of a 2D array, when used like this, decays into a pointer to its first element. The first element is the first row, <code>{1, 2, 3}</code>. So, <code>matrix</code> is of type <code>int (*)[3]</code> (pointer to an array of 3 integers).
+                        2. <code>matrix + 1</code>: Pointer arithmetic is performed. Adding 1 to a pointer of type <code>int (*)[3]</code> advances it by the size of one array of 3 integers. It now points to the beginning of the second row, <code>{4, 5, 6}</code>.
+                        3. <code>*(matrix + 1)</code>: Dereferencing this pointer gives the object it points to, which is the second row itself (the array <code>{4, 5, 6}</code>). When this array is used in an expression, it decays into a pointer to its first element. So, <code>*(matrix + 1)</code> effectively becomes a pointer (<code>int*</code>) to the element <code>4</code> (<code>matrix[1][0]</code>).
+                        4. <code>*(matrix + 1) + 2</code>: Pointer arithmetic is performed on the <code>int*</code> obtained in the previous step. Adding 2 advances the pointer two integer positions from <code>4</code>. It now points to the element <code>6</code> (<code>matrix[1][2]</code>).
+                        5. <code>*(*(matrix + 1) + 2)</code>: Dereferencing this final pointer retrieves the value it points to, which is 6.
+                        This expression is equivalent to <code>matrix[1][2]</code>.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q49 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+#define SQUARE(x) x * x
+int main() {
+    int a = 3;
+    int result = SQUARE(a + 1); // Macro expansion pitfall
+    printf("%d\n", result);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q49" value="a"> 16</label>
+                        <label><input type="radio" name="q49" value="b"> 9</label>
+                        <label><input type="radio" name="q49" value="c"> 7</label>
+                        <label><input type="radio" name="q49" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 7</strong></p>
+                        <p>Explanation: Macros perform simple text substitution *before* compilation. The preprocessor replaces <code>SQUARE(a + 1)</code> directly with the macro body, substituting <code>a + 1</code> for <code>x</code>.
+                        The line becomes: <code>int result = a + 1 * a + 1;</code>
+                        Due to operator precedence, multiplication (<code>*</code>) is performed before addition (<code>+</code>).
+                        The expression is evaluated as: <code>result = a + (1 * a) + 1;</code>
+                        Substituting <code>a = 3</code>: <code>result = 3 + (1 * 3) + 1;</code>
+                        <code>result = 3 + 3 + 1;</code>
+                        <code>result = 7;</code>
+                        To fix the macro, it should use parentheses: <code>#define SQUARE(x) ((x) * (x))</code>. Then <code>SQUARE(a + 1)</code> would expand to <code>((a + 1) * (a + 1))</code>, giving the expected <code>((3 + 1) * (3 + 1)) = 4 * 4 = 16</code>.</p>
+                     </div>
+                 </li>
+
+                <!-- Q50 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 5;
+    int *p = &x;
+    printf("sizeof(p) = %zu\n", sizeof(p));  // Size of pointer
+    printf("sizeof(*p) = %zu\n", sizeof(*p)); // Size of pointed-to value
+    return 0;
+}</code></pre>
+                    <p><strong>Assuming a 64-bit system where pointers are 8 bytes and int is 4 bytes, what is the output? (<code>%zu</code> is for <code>size_t</code>)</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q50" value="a"> sizeof(p) = 4<br>sizeof(*p) = 8</label>
+                        <label><input type="radio" name="q50" value="b"> sizeof(p) = 8<br>sizeof(*p) = 4</label>
+                        <label><input type="radio" name="q50" value="c"> sizeof(p) = 8<br>sizeof(*p) = 8</label>
+                        <label><input type="radio" name="q50" value="d"> sizeof(p) = 4<br>sizeof(*p) = 4</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) sizeof(p) = 8<br>sizeof(*p) = 4</strong></p>
+                        <p>Explanation:
+                        1. <code>sizeof(p)</code>: Calculates the size of the pointer variable <code>p</code> itself. On a 64-bit system, pointers typically occupy 8 bytes to hold a 64-bit memory address.
+                        2. <code>sizeof(*p)</code>: Calculates the size of the *type* that the pointer <code>p</code> points to. <code>p</code> is an <code>int*</code>, so it points to an <code>int</code>. The type of the expression <code>*p</code> is <code>int</code>. The size of an <code>int</code> is assumed to be 4 bytes in this question.
+                        Therefore, the output reflects the size of the pointer (8 bytes) and the size of the data type it points to (4 bytes).</p>
+                     </div>
+                 </li>
+                <!-- Q51 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[10];
+    printf("%zu\n", sizeof(arr));
+    return 0;
+}</code></pre>
+                    <p><strong>Assuming <code>int</code> is 4 bytes, what is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q51" value="a"> 4</label>
+                        <label><input type="radio" name="q51" value="b"> 8 (pointer size)</label>
+                        <label><input type="radio" name="q51" value="c"> 10</label>
+                        <label><input type="radio" name="q51" value="d"> 40</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) 40</strong></p>
+                        <p>Explanation: When <code>sizeof</code> is applied directly to an array name (and not in a context where the array decays to a pointer, like function parameters), it yields the total size of the array in bytes. The array <code>arr</code> has 10 elements, and each element is an <code>int</code> of size 4 bytes. Therefore, the total size is 10 elements * 4 bytes/element = 40 bytes.</p>
+                    </div>
+                </li>
+
+                <!-- Q52 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+void printSize(int arr[]) { // arr decays to int* here
+    printf("%zu\n", sizeof(arr));
+}
+int main() {
+    int data[10];
+    printf("%zu\n", sizeof(data));
+    printSize(data);
+    return 0;
+}</code></pre>
+                    <p><strong>Assuming <code>int</code> is 4 bytes and pointers are 8 bytes (64-bit system), what is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q52" value="a"> 40<br>40</label>
+                        <label><input type="radio" name="q52" value="b"> 40<br>8</label>
+                        <label><input type="radio" name="q52" value="c"> 8<br>40</label>
+                        <label><input type="radio" name="q52" value="d"> 8<br>8</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 40<br>8</strong></p>
+                        <p>Explanation:
+                        1. Inside <code>main</code>, <code>sizeof(data)</code> is applied to the actual array <code>data</code>. As in Q51, this yields the total size of the array: 10 elements * 4 bytes/element = 40 bytes.
+                        2. When <code>data</code> is passed to the function <code>printSize</code>, the array name `data` decays into a pointer to its first element (<code>int*</code>). The function parameter declaration <code>int arr[]</code> is syntactic sugar and is treated exactly the same as <code>int *arr</code>.
+                        3. Inside <code>printSize</code>, <code>sizeof(arr)</code> is applied to the function parameter <code>arr</code>, which is now a pointer (<code>int*</code>). Therefore, it yields the size of the pointer itself, which is 8 bytes on the assumed 64-bit system.
+                        This demonstrates the difference between <code>sizeof</code> on an array and <code>sizeof</code> on a pointer resulting from array decay.</p>
+                    </div>
+                </li>
+
+                <!-- Q53 -->
+                 <li>
+                    <p><strong>What is a dangling pointer?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q53" value="a"> A pointer initialized to NULL.</label>
+                        <label><input type="radio" name="q53" value="b"> A pointer that points to a valid memory location holding garbage data.</label>
+                        <label><input type="radio" name="q53" value="c"> A pointer that points to a memory location that has been deallocated (freed) or is no longer valid (e.g., local variable out of scope).</label>
+                        <label><input type="radio" name="q53" value="d"> An uninitialized pointer.</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) A pointer that points to a memory location that has been deallocated (freed) or is no longer valid (e.g., local variable out of scope).</strong></p>
+                        <p>Explanation: A dangling pointer arises when a pointer variable still holds the address of a memory location, but that memory location is no longer allocated or valid for access. Common causes include:
+                        1. Using a pointer after the memory it pointed to was freed (<code>free(p); *p = 10;</code>).
+                        2. Returning the address of a local variable from a function (the variable's memory on the stack is gone after the function returns).
+                        Dereferencing a dangling pointer leads to undefined behavior, often crashes or data corruption.</p>
+                    </div>
+                </li>
+
+                <!-- Q54 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+#include &lt;string.h&gt; // For strlen
+int main() {
+    char *name = "Alexander";
+    printf("%zu ", sizeof(name));   // Size of pointer
+    printf("%zu\n", strlen(name)); // Length of string
+    return 0;
+}</code></pre>
+                    <p><strong>Assuming pointers are 8 bytes, what is the likely output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q54" value="a"> 9 9</label>
+                        <label><input type="radio" name="q54" value="b"> 10 9</label>
+                        <label><input type="radio" name="q54" value="c"> 8 9</label>
+                        <label><input type="radio" name="q54" value="d"> 8 10</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) 8 9</strong></p>
+                        <p>Explanation:
+                        1. <code>sizeof(name)</code>: <code>name</code> is declared as <code>char *name</code>, meaning it is a pointer variable (of type <code>char*</code>). <code>sizeof</code> applied to a pointer variable gives the size of the pointer itself, which is assumed to be 8 bytes.
+                        2. <code>strlen(name)</code>: The <code>strlen</code> function calculates the length of the string pointed to by <code>name</code> by counting characters until it encounters the null terminator (<code>\0</code>). The string "Alexander" has 9 characters ('A', 'l', 'e', 'x', 'a', 'n', 'd', 'e', 'r'). The null terminator is not included in the length count returned by <code>strlen</code>.
+                        Therefore, the output is 8 (size of pointer) followed by 9 (length of string).</p>
+                    </div>
+                </li>
+
+                <!-- Q55 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+#include &lt;string.h&gt; // For strlen
+int main() {
+    char name[] = "Alexander";
+    printf("%zu ", sizeof(name));   // Size of array
+    printf("%zu\n", strlen(name)); // Length of string
+    return 0;
+}</code></pre>
+                    <p><strong>What is the likely output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q55" value="a"> 9 9</label>
+                        <label><input type="radio" name="q55" value="b"> 10 9</label>
+                        <label><input type="radio" name="q55" value="c"> 8 9 (pointer size)</label>
+                        <label><input type="radio" name="q55" value="d"> 10 10</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 10 9</strong></p>
+                        <p>Explanation:
+                        1. <code>sizeof(name)</code>: <code>name</code> is declared as <code>char name[]</code>, initialized with "Alexander". This creates an array of characters large enough to hold the string *including* the terminating null character (<code>\0</code>). The string "Alexander" has 9 characters, plus 1 for the null terminator, making the array size 10 bytes. <code>sizeof</code> applied to the array yields its total size in bytes, which is 10.
+                        2. <code>strlen(name)</code>: As in Q54, <code>strlen</code> calculates the length of the string *excluding* the null terminator. The length is 9.
+                        Therefore, the output is 10 (size of array) followed by 9 (length of string).</p>
+                    </div>
+                </li>
+
+                <!-- Q56 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int i = 10;
+    if (i == (float)i) { // Comparing int and float
+        printf("Equal\n");
+    } else {
+        printf("Not Equal\n");
+    }
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q56" value="a"> Equal</label>
+                        <label><input type="radio" name="q56" value="b"> Not Equal</label>
+                        <label><input type="radio" name="q56" value="c"> Compilation Error</label>
+                        <label><input type="radio" name="q56" value="d"> Undefined Behavior</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: a) Equal</strong></p>
+                        <p>Explanation: When comparing an <code>int</code> and a <code>float</code> (or <code>double</code>), the integer is promoted to the floating-point type before the comparison. The integer value 10 can be represented exactly as a standard IEEE 754 float or double (as 10.0). Therefore, <code>(float)i</code> evaluates to 10.0f. The comparison <code>i == 10.0f</code> (after promotion of <code>i</code> to 10.0f) evaluates to true. Thus, "Equal" is printed.</p>
+                        <p><em>Note: This might not hold true for very large integers that cannot be represented exactly by the floating-point type.</em></p>
+                     </div>
+                 </li>
+
+                <!-- Q57 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    float f = 0.1f;
+    if (f == 0.1) { // Comparing float and double literal
+         printf("Equal\n");
+    } else if (f == 0.1f) {
+         printf("Equal float literal\n");
+    } else {
+         printf("Not Equal\n");
+    }
+    return 0;
+}</code></pre>
+                    <p><strong>What is the most likely output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q57" value="a"> Equal</label>
+                        <label><input type="radio" name="q57" value="b"> Equal float literal</label>
+                        <label><input type="radio" name="q57" value="c"> Not Equal</label>
+                        <label><input type="radio" name="q57" value="d"> Compilation Error</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) Equal float literal (or c) Not Equal on some systems/strict settings)</strong></p>
+                        <p>Explanation: Floating-point representation can be tricky.
+                        1. <code>float f = 0.1f;</code>: Initializes a single-precision float <code>f</code> with the value closest to 0.1.
+                        2. <code>f == 0.1</code>: Here, <code>f</code> (a float) is compared with <code>0.1</code>. The literal <code>0.1</code> is treated as a <code>double</code> by default. The float <code>f</code> is promoted to a double for the comparison. Due to the different precision levels, the binary representation of 0.1 as a float, when promoted to double, might not be *exactly* the same as the binary representation of 0.1 directly as a double. Therefore, this comparison often evaluates to false.
+                        3. <code>f == 0.1f</code>: Here, <code>f</code> (a float) is compared with <code>0.1f</code> (explicitly a float literal). Both operands are floats, and since <code>f</code> was initialized with <code>0.1f</code>, this comparison should evaluate to true.
+                        Therefore, the code most likely enters the `else if` block and prints "Equal float literal". However, due to the intricacies of floating-point arithmetic and potential compiler optimizations or settings, comparing floats for exact equality is generally discouraged. Sometimes even `f == 0.1f` might yield unexpected results, potentially leading to "Not Equal", although "Equal float literal" is the most probable outcome.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q58 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 1;
+    if (x = 0) { // Assignment, not comparison
+        printf("If block\n");
+    } else {
+        printf("Else block\n");
+    }
+    printf("x = %d\n", x);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q58" value="a"> If block<br>x = 1</label>
+                        <label><input type="radio" name="q58" value="b"> Else block<br>x = 1</label>
+                        <label><input type="radio" name="q58" value="c"> If block<br>x = 0</label>
+                        <label><input type="radio" name="q58" value="d"> Else block<br>x = 0</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: d) Else block<br>x = 0</strong></p>
+                        <p>Explanation: This is a classic C pitfall: using assignment (<code>=</code>) instead of comparison (<code>==</code>) in an <code>if</code> statement.
+                        1. <code>if (x = 0)</code>: The expression inside the <code>if</code> is an assignment. The value 0 is assigned to the variable <code>x</code>.
+                        2. The result of the assignment expression <code>x = 0</code> is the value assigned, which is 0.
+                        3. The <code>if</code> statement checks this result (0). In C, 0 is treated as false in a boolean context.
+                        4. Since the condition is false, the <code>else</code> block is executed, printing "Else block".
+                        5. After the <code>if-else</code> statement, the value of <code>x</code> is the value that was assigned inside the <code>if</code> condition, which is 0. The final printf prints "x = 0".</p>
+                     </div>
+                 </li>
+
+                <!-- Q59 -->
+                <li>
+                     <p><strong>Consider <code>int *arr[5];</code> What does this declare?</strong></p>
+                     <div class="mcq-options">
+                         <label><input type="radio" name="q59" value="a"> A pointer to an array of 5 integers.</label>
+                         <label><input type="radio" name="q59" value="b"> An array of 5 pointers to integers.</label>
+                         <label><input type="radio" name="q59" value="c"> An array of 5 integers.</label>
+                         <label><input type="radio" name="q59" value="d"> A pointer to a pointer to an integer (size 5).</label>
+                     </div>
+                     <button class="toggle-explanation">Show/Hide Explanation</button>
+                     <div class="explanation">
+                         <p><strong>Answer: b) An array of 5 pointers to integers.</strong></p>
+                         <p>Explanation: Read C declarations using the "right-left" rule or by operator precedence. The subscript operator <code>[]</code> has higher precedence than the dereference operator <code>*</code>.
+                         1. Start with the identifier: <code>arr</code>.
+                         2. Look right: <code>[5]</code>. This means <code>arr</code> is an array of size 5.
+                         3. Look left: <code>*</code>. This means the elements of the array are pointers.
+                         4. Look further left: <code>int</code>. This means the pointers point to integers.
+                         Putting it together: <code>arr</code> is an array of 5 elements, where each element is a pointer to an integer (<code>int*</code>).</p>
+                         <p>Compare with <code>int (*ptr)[5];</code> which declares <code>ptr</code> as a pointer (<code>*ptr</code>) to an array of 5 integers (<code>[5]</code> of type <code>int</code>).</p>
+                      </div>
+                  </li>
+
+                 <!-- Q60 -->
+                 <li>
+                     <p><strong>Consider <code>int (*ptr)[5];</code> What does this declare?</strong></p>
+                     <div class="mcq-options">
+                         <label><input type="radio" name="q60" value="a"> A pointer to an array of 5 integers.</label>
+                         <label><input type="radio" name="q60" value="b"> An array of 5 pointers to integers.</label>
+                         <label><input type="radio" name="q60" value="c"> An array of 5 integer pointers.</label>
+                         <label><input type="radio" name="q60" value="d"> Invalid Syntax.</label>
+                     </div>
+                     <button class="toggle-explanation">Show/Hide Explanation</button>
+                     <div class="explanation">
+                         <p><strong>Answer: a) A pointer to an array of 5 integers.</strong></p>
+                         <p>Explanation: Use the "right-left" rule, respecting parentheses.
+                         1. Start with the identifier: <code>ptr</code>.
+                         2. Look left inside parentheses: <code>*</code>. This means <code>ptr</code> is a pointer.
+                         3. Look right outside parentheses: <code>[5]</code>. This means <code>ptr</code> points to an array of size 5.
+                         4. Look left outside parentheses: <code>int</code>. This means the elements of the array are integers.
+                         Putting it together: <code>ptr</code> is a pointer to an array of 5 integers.</p>
+                         <p>This type of pointer is often used when dealing with 2D arrays passed to functions, or when dynamically allocating 2D arrays correctly.</p>
+                      </div>
+                  </li>
+                <!-- Q61 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 10;
+    int *p = &x;
+    long long y = (long long)p; // Cast pointer to integer type
+    printf("Address (p) = %p\n", (void*)p);
+    printf("Integer (y) = %lld\n", y);
+    int *p2 = (int*)y; // Cast integer back to pointer
+    printf("Value via p2 = %d\n", *p2);
+    return 0;
+}</code></pre>
+                    <p><strong>Is casting a pointer to an integer type (like <code>long long</code>) and back guaranteed to work portably? What is the likely output for the value?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q61" value="a"> Yes, always portable. Output: 10</label>
+                        <label><input type="radio" name="q61" value="b"> No, not guaranteed portable, but often works. Output: 10</label>
+                        <label><input type="radio" name="q61" value="c"> No, not portable. Output: Garbage value or crash.</label>
+                        <label><input type="radio" name="q61" value="d"> Yes, always portable. Output: Address value.</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) No, not guaranteed portable, but often works. Output: 10</strong></p>
+                        <p>Explanation: The C standard allows casting pointers to specific integer types (<code>intptr_t</code> and <code>uintptr_t</code>, defined in <code>&lt;stdint.h&gt;</code>) and back, guaranteeing that the original pointer value is recovered. Casting to other integer types like <code>long long</code> is *not* guaranteed by the standard to preserve the pointer value without loss, although it often works in practice on common architectures where <code>long long</code> is wide enough to hold a pointer (e.g., 64-bit systems).
+                        Assuming the cast works without loss on the specific system:
+                        1. <code>p</code> holds the address of <code>x</code>.
+                        2. <code>y</code> stores the numerical representation of that address as a <code>long long</code>.
+                        3. <code>p2</code> is assigned the pointer value obtained by casting <code>y</code> back to <code>int*</code>. It should hold the same address as <code>p</code>.
+                        4. <code>*p2</code> dereferences this pointer, accessing the value of <code>x</code>, which is 10.
+                        The key takeaway is that while this code might produce 10, relying on casts to arbitrary integer types instead of <code>uintptr_t</code> / <code>intptr_t</code> is not portable.</p>
+                     </div>
+                 </li>
+
+                <!-- Q62 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 1;
+    // The comma operator evaluates left operand, discards result,
+    // evaluates right operand, result is value of right operand.
+    int y = (x++, x + 10);
+    printf("x = %d, y = %d\n", x, y);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q62" value="a"> x = 1, y = 11</label>
+                        <label><input type="radio" name="q62" value="b"> x = 2, y = 11</label>
+                        <label><input type="radio" name="q62" value="c"> x = 2, y = 12</label>
+                        <label><input type="radio" name="q62" value="d"> x = 1, y = 12</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) x = 2, y = 12</strong></p>
+                        <p>Explanation: The comma operator (<code>,</code>) acts as a sequence point. It evaluates its left operand first, including any side effects, and discards the result. Then, it evaluates its right operand, and the result of the whole comma expression is the value of the right operand.
+                        1. In <code>(x++, x + 10)</code>, the left operand <code>x++</code> is evaluated first. The value of the expression <code>x++</code> is 1 (the original value of x), but this value is discarded. The side effect, incrementing <code>x</code>, occurs. So, <code>x</code> becomes 2.
+                        2. Next, the right operand <code>x + 10</code> is evaluated. Since <code>x</code> is now 2, this expression evaluates to <code>2 + 10 = 12</code>.
+                        3. The value of the entire comma expression is the value of the right operand, which is 12. This value is assigned to <code>y</code>.
+                        4. The final printf prints the current values: <code>x = 2</code> and <code>y = 12</code>.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q63 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int arr[3] = {10, 20, 30};
+    int *p = arr;
+    printf("%p\n", (void*)p);
+    printf("%p\n", (void*)(p+1));
+    return 0;
+}</code></pre>
+                    <p><strong>Assuming <code>int</code> is 4 bytes and the first address printed is <code>0x7ffc12345670</code>, what will the second address printed likely be?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q63" value="a"> 0x7ffc12345671</label>
+                        <label><input type="radio" name="q63" value="b"> 0x7ffc12345674</label>
+                        <label><input type="radio" name="q63" value="c"> 0x7ffc12345678</label>
+                        <label><input type="radio" name="q63" value="d"> 0x7ffc12345680</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) 0x7ffc12345674</strong></p>
+                        <p>Explanation: <code>p</code> points to the first element of <code>arr</code> (type <code>int*</code>). <code>p+1</code> performs pointer arithmetic. It adds <code>1 * sizeof(*p)</code> to the address held by <code>p</code>. Since <code>p</code> points to an <code>int</code>, and <code>sizeof(int)</code> is assumed to be 4 bytes, <code>p+1</code> calculates an address that is 4 bytes higher than the address in <code>p</code>.
+                        The initial address is <code>0x7ffc12345670</code>. Adding 4 bytes (in hexadecimal) gives:
+                        <code>0x7ffc12345670 + 0x4 = 0x7ffc12345674</code>.
+                        This is the address of the second element, <code>arr[1]</code>.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q64 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int i = 5;
+    // Equivalent ways to get address of i?
+    // A) &i
+    // B) int *p = &i; p
+    // C) int *p; *p = i; &p  (Incorrect logic)
+}</code></pre>
+                    <p><strong>Which options correctly represent or evaluate to the address of the variable <code>i</code>?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q64" value="a"> A only</label>
+                        <label><input type="radio" name="q64" value="b"> B only</label>
+                        <label><input type="radio" name="q64" value="c"> A and B</label>
+                        <label><input type="radio" name="q64" value="d"> A, B, and C</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) A and B</strong></p>
+                        <p>Explanation:
+                        A) <code>&i</code>: The address-of operator <code>&</code> explicitly yields the memory address of the variable <code>i</code>. This is correct.
+                        B) <code>int *p = &i; p</code>: Here, the pointer <code>p</code> is initialized with the address of <code>i</code>. The expression <code>p</code> itself evaluates to the value stored in <code>p</code>, which is the address of <code>i</code>. This is correct.
+                        C) <code>int *p; *p = i; &p</code>: This code is problematic. <code>int *p;</code> declares an uninitialized pointer <code>p</code>. <code>*p = i;</code> attempts to dereference this uninitialized pointer and assign the value of <code>i</code> to whatever random memory location <code>p</code> happens to point to. This is undefined behavior and will likely crash or corrupt memory. Furthermore, <code>&p</code> evaluates to the address of the pointer variable <code>p</code> itself, *not* the address of <code>i</code>. This is incorrect.</p>
+                     </div>
+                 </li>
+
+                 <!-- Q65 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main(int argc, char *argv[]) { // Command line arguments
+    // Assuming the program is run as: ./a.out hello world
+    printf("%s\n", argv[1]);
+    printf("%c\n", argv[2][1]);
+    return 0;
+}</code></pre>
+                    <p><strong>Assuming the program is compiled to <code>a.out</code> and run as <code>./a.out hello world</code>, what is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q65" value="a"> ./a.out<br>h</label>
+                        <label><input type="radio" name="q65" value="b"> hello<br>o</label>
+                        <label><input type="radio" name="q65" value="c"> hello<br>w</label>
+                        <label><input type="radio" name="q65" value="d"> world<br>o</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) hello<br>o</strong></p>
+                        <p>Explanation: <code>main</code> receives command-line arguments via <code>argc</code> (argument count) and <code>argv</code> (argument vector). <code>argv</code> is an array of strings (<code>char*</code>).
+                        - <code>argv[0]</code> typically holds the name of the program itself (<code>./a.out</code>).
+                        - <code>argv[1]</code> holds the first argument after the program name (<code>hello</code>).
+                        - <code>argv[2]</code> holds the second argument (<code>world</code>).
+                        - <code>argc</code> would be 3 in this case.
+                        1. <code>printf("%s\n", argv[1]);</code> prints the string pointed to by <code>argv[1]</code>, which is "hello".
+                        2. <code>argv[2]</code> points to the string "world". <code>argv[2][1]</code> accesses the character at index 1 within that string (remember, index 0 is 'w'). The character at index 1 is 'o'.
+                        3. <code>printf("%c\n", argv[2][1]);</code> prints the character 'o'.</p>
+                     </div>
+                 </li>
+
+                <!-- Q66 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+void func(int **ptr) {
+    int a = 20;
+    *ptr = &a; // Make *ptr (p in main) point to local variable 'a'
+}
+int main() {
+    int i = 10;
+    int *p = &i;
+    printf("Before func: %d\n", *p);
+    func(&p);
+    // 'p' now points to where 'a' WAS in func's stack frame
+    printf("After func: %d\n", *p); // Accessing dangling pointer
+    return 0;
+}</code></pre>
+                    <p><strong>What is the most likely behavior after the call to <code>func</code>?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q66" value="a"> Prints 10, then 20 reliably.</label>
+                        <label><input type="radio" name="q66" value="b"> Prints 10, then 10.</label>
+                        <label><input type="radio" name="q66" value="c"> Prints 10, then causes Undefined Behavior (garbage value, crash).</label>
+                        <label><input type="radio" name="q66" value="d"> Compilation Error.</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) Prints 10, then causes Undefined Behavior (garbage value, crash).</strong></p>
+                        <p>Explanation:
+                        1. Initially, <code>p</code> in <code>main</code> points to <code>i</code> (value 10). The first printf correctly prints 10.
+                        2. The address of the pointer <code>p</code> (<code>&p</code>) is passed to <code>func</code>. Inside <code>func</code>, <code>ptr</code> is a double pointer holding the address of <code>main</code>'s <code>p</code> (<code>ptr == &p</code>).
+                        3. Inside <code>func</code>, <code>a</code> is a local variable stored on <code>func</code>'s stack frame.
+                        4. <code>*ptr = &a;</code> dereferences <code>ptr</code>, which accesses <code>main</code>'s pointer <code>p</code>, and assigns the address of the local variable <code>a</code> to it. So, <code>main</code>'s <code>p</code> is modified to point to <code>func</code>'s <code>a</code>.
+                        5. When <code>func</code> returns, its stack frame (including the memory for <code>a</code>) is deallocated and becomes invalid.
+                        6. Back in <code>main</code>, the pointer <code>p</code> now holds the address of where <code>a</code> *used to be*. This is a dangling pointer.
+                        7. <code>printf("After func: %d\n", *p);</code> attempts to dereference this dangling pointer. This accesses invalid memory, leading to undefined behavior. It might print a garbage value (whatever happens to be in that reused stack memory), crash immediately (segmentation fault), or cause issues later.</p>
+                     </div>
+                 </li>
+
+                <!-- Q67 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int x = 5;
+    const int *p1 = &x;
+    int * const p2 = &x;
+
+    // p1++; // Valid?
+    // (*p1)++; // Valid?
+    // p2++; // Valid?
+    // (*p2)++; // Valid?
+}</code></pre>
+                    <p><strong>Which of the commented-out lines would cause a compilation error?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q67" value="a"> (*p1)++; and p2++;</label>
+                        <label><input type="radio" name="q67" value="b"> p1++; and (*p2)++;</label>
+                        <label><input type="radio" name="q67" value="c"> (*p1)++; only</label>
+                        <label><input type="radio" name="q67" value="d"> p2++; only</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: a) (*p1)++; and p2++;</strong></p>
+                        <p>Explanation:
+                        - <code>const int *p1 = &x;</code>: <code>p1</code> is a pointer to a constant integer.
+                            - <code>p1++;</code> Changes the pointer itself. This is VALID because the pointer <code>p1</code> is not constant.
+                            - <code>(*p1)++;</code> Attempts to modify the value pointed to by <code>p1</code>. This is INVALID because <code>p1</code> points to a <code>const int</code>. (Compilation Error)
+                        - <code>int * const p2 = &x;</code>: <code>p2</code> is a constant pointer to an integer.
+                            - <code>p2++;</code> Attempts to change the pointer itself. This is INVALID because the pointer <code>p2</code> is declared <code>const</code>. (Compilation Error)
+                            - <code>(*p2)++;</code> Attempts to modify the value pointed to by <code>p2</code>. This is VALID because <code>p2</code> points to a non-<code>const</code> <code>int</code> (the variable <code>x</code>), and only the pointer itself is constant. This would change <code>x</code> to 6.
+                        Therefore, the lines causing compilation errors are <code>(*p1)++;</code> and <code>p2++;</code>.</p>
+                     </div>
+                 </li>
+
+                <!-- Q68 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    char str[50] = "Initial";
+    char *p = str + 2; // p points to 'i'
+    sprintf(p, " Replacement"); // Write starting at p's location
+    printf("%s\n", str);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q68" value="a"> Initial Replacement</label>
+                        <label><input type="radio" name="q68" value="b">  Replacement</label>
+                        <label><input type="radio" name="q68" value="c"> In Replacement</label>
+                        <label><input type="radio" name="q68" value="d"> Initial Replacement</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) In Replacement</strong></p>
+                        <p>Explanation:
+                        1. <code>str</code> contains "Initial\0".
+                        2. <code>p = str + 2</code> makes <code>p</code> point to the character at index 2, which is 'i'.
+                        3. <code>sprintf(p, " Replacement")</code> works like <code>printf</code> but writes its output to the character buffer pointed to by its first argument (<code>p</code>). It starts writing the string " Replacement" (including the leading space) into the memory location pointed to by <code>p</code>. This overwrites the original 'i', 't', 'i', 'a', 'l', '\0' and continues into the rest of the buffer <code>str</code>. <code>sprintf</code> automatically adds a null terminator at the end of the string it writes.
+                        4. The buffer <code>str</code> now contains: 'I', 'n', ' ', 'R', 'e', 'p', 'l', 'a', 'c', 'e', 'm', 'e', 'n', 't', '\0'.
+                        5. <code>printf("%s\n", str);</code> prints the contents of the <code>str</code> buffer up to the null terminator.
+                        The output is "In Replacement".</p>
+                     </div>
+                 </li>
+
+                 <!-- Q69 -->
+                 <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+typedef int* IntPtr;
+int main() {
+    int x = 10, y = 20;
+    const IntPtr p = &x; // Is p a const pointer, or pointer to const?
+    // *p = 15; // Valid?
+    // p = &y; // Valid?
+}</code></pre>
+                    <p><strong>What does <code>const IntPtr p</code> declare, and which commented-out line is invalid?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q69" value="a"> Constant pointer to int. <code>*p = 15;</code> is invalid.</label>
+                        <label><input type="radio" name="q69" value="b"> Pointer to constant int. <code>p = &y;</code> is invalid.</label>
+                        <label><input type="radio" name="q69" value="c"> Constant pointer to int. <code>p = &y;</code> is invalid.</label>
+                        <label><input type="radio" name="q69" value="d"> Pointer to constant int. <code>*p = 15;</code> is invalid.</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: c) Constant pointer to int. <code>p = &y;</code> is invalid.</strong></p>
+                        <p>Explanation: This demonstrates how <code>typedef</code> interacts with <code>const</code>. <code>typedef</code> is not a simple text substitution like <code>#define</code>. <code>IntPtr</code> is defined as a type alias for <code>int*</code> (pointer to integer).
+                        When you write <code>const IntPtr p</code>, the <code>const</code> qualifier applies to the type alias <code>IntPtr</code> itself. Since <code>IntPtr</code> represents a pointer type (<code>int*</code>), applying <code>const</code> makes the *pointer* constant.
+                        So, <code>const IntPtr p</code> is equivalent to <code>int * const p;</code> (a constant pointer to a non-constant integer).
+                        - <code>*p = 15;</code> Attempts to modify the value pointed to. Since <code>p</code> points to a non-constant <code>int</code> (variable <code>x</code>), this is VALID.
+                        - <code>p = &y;</code> Attempts to change the pointer <code>p</code> itself. Since <code>p</code> is a constant pointer, this is INVALID. (Compilation Error)
+                        Therefore, it declares a constant pointer to an int, and <code>p = &y;</code> is the invalid line.</p>
+                     </div>
+                 </li>
+
+                <!-- Q70 -->
+                <li>
+                    <pre><code>#include &lt;stdio.h&gt;
+int main() {
+    int a = 0, b = 0;
+    if (a && b++) { // Short-circuit evaluation
+       printf("If block\n");
+    }
+    printf("a=%d, b=%d\n", a, b);
+    return 0;
+}</code></pre>
+                    <p><strong>What is the output?</strong></p>
+                    <div class="mcq-options">
+                        <label><input type="radio" name="q70" value="a"> If block<br>a=0, b=1</label>
+                        <label><input type="radio" name="q70" value="b"> a=0, b=0</label>
+                        <label><input type="radio" name="q70" value="c"> a=0, b=1</label>
+                        <label><input type="radio" name="q70" value="d"> If block<br>a=0, b=0</label>
+                    </div>
+                    <button class="toggle-explanation">Show/Hide Explanation</button>
+                    <div class="explanation">
+                        <p><strong>Answer: b) a=0, b=0</strong></p>
+                        <p>Explanation: The logical AND operator (<code>&&</code>) in C uses short-circuit evaluation.
+                        1. The left operand <code>a</code> is evaluated first. <code>a</code> is 0, which is considered false in a boolean context.
+                        2. Because the left operand of <code>&&</code> is false, the entire expression cannot be true, regardless of the value of the right operand.
+                        3. Therefore, the right operand <code>b++</code> is *not evaluated* due to short-circuiting. The side effect (incrementing <code>b</code>) does not occur.
+                        4. The overall result of <code>a && b++</code> is false (0).
+                        5. The <code>if</code> block is skipped.
+                        6. The final printf prints the values of <code>a</code> and <code>b</code>. Since <code>b++</code> was never executed, <code>b</code> remains 0. The output is "a=0, b=0".</p>
+                     </div>
+                 </li>
+
+            </ol>
+        </section>
+    </div>
+
+    <script>
+        // --- Explanation Toggle ---
+        const explanationButtons = document.querySelectorAll('.toggle-explanation');
+
+        explanationButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const explanationDiv = button.nextElementSibling; // Get the div right after the button
+                if (explanationDiv && explanationDiv.classList.contains('explanation')) {
+                    if (explanationDiv.style.display === 'block') {
+                        explanationDiv.style.display = 'none';
+                        button.textContent = 'Show Explanation';
+                    } else {
+                        explanationDiv.style.display = 'block';
+                        button.textContent = 'Hide Explanation';
+                    }
+                }
+            });
+        });
+
+        // --- Theme Toggle ---
+        const themeToggleButton = document.getElementById('theme-toggle');
+        const body = document.body;
+        const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+        // Function to apply theme based on preference or saved value
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                body.classList.add('dark-theme');
+                themeToggleButton.textContent = 'Toggle Light Mode';
+            } else {
+                body.classList.remove('dark-theme');
+                themeToggleButton.textContent = 'Toggle Dark Mode';
+            }
+        }
+
+        // Check localStorage first
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            applyTheme(savedTheme);
+        } else {
+            // Otherwise, check OS preference
+             applyTheme(prefersDarkScheme.matches ? 'dark' : 'light');
+        }
+
+        // Listener for button click
+        themeToggleButton.addEventListener('click', () => {
+            const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme); // Save preference
+        });
+
+         // Optional: Listener for OS theme changes
+         prefersDarkScheme.addEventListener('change', (e) => {
+             // Only apply OS preference if no theme is explicitly saved
+             if (!localStorage.getItem('theme')) {
+                 applyTheme(e.matches ? 'dark' : 'light');
+             }
+         });
+
+    </script>
+</body>
+</html>
+```
