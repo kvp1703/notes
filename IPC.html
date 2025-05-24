@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 6: Interprocess Communication</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color-light: #f0f2f5;
+            --text-color-light: #333;
+            --card-bg-light: rgba(255, 255, 255, 0.6);
+            --card-border-light: rgba(255, 255, 255, 0.3);
+            --highlight-color-light: #007bff;
+            --code-bg-light: rgba(0, 0, 0, 0.05);
+            --code-text-light: #c7254e;
+            --link-color-light: #007bff;
+            --toggle-bg-light: #ddd;
+            --toggle-handle-light: #fff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --sub-heading-color-light: #555;
+        }
+
+        .dark-mode {
+            --background-color-light: #1a1a2e;
+            --text-color-light: #e0e0e0;
+            --card-bg-light: rgba(25, 25, 40, 0.6);
+            --card-border-light: rgba(40, 40, 60, 0.3);
+            --highlight-color-light: #64ffda;
+            --code-bg-light: rgba(0, 0, 0, 0.2);
+            --code-text-light: #b38bff;
+            --link-color-light: #82aaff;
+            --toggle-bg-light: #555;
+            --toggle-handle-light: #e0e0e0;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --sub-heading-color-light: #a0a0a0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color-light);
+            color: var(--text-color-light);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--card-bg-light);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border-light);
+            box-shadow: 0 4px 30px var(--shadow-color);
+            padding: 20px 40px;
+            text-align: center;
+            position: relative;
+            z-index: 100;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            color: var(--highlight-color-light);
+            font-weight: 700;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 101;
+            display: flex;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--toggle-bg-light);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--toggle-handle-light);
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--highlight-color-light);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        main {
+            flex-grow: 1;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 20px auto;
+        }
+
+        section {
+            background: var(--card-bg-light);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border-light);
+            border-radius: 15px;
+            box-shadow: 0 4px 30px var(--shadow-color);
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        h2 {
+            font-size: 2em;
+            color: var(--highlight-color-light);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--highlight-color-light);
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.6em;
+            color: var(--sub-heading-color-light);
+            margin-top: 25px;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed var(--card-border-light);
+            padding-bottom: 5px;
+        }
+
+        h4 {
+            font-size: 1.2em;
+            color: var(--sub-heading-color-light);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        ol {
+            list-style-type: decimal;
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        pre {
+            background-color: var(--code-bg-light);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--card-border-light);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        code {
+            color: var(--code-text-light);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        pre code {
+            display: block;
+            padding: 0;
+            color: var(--text-color-light); /* Override for pre code to be readable */
+        }
+        
+        .code-comment {
+            color: #7a828e; /* A softer color for comments */
+        }
+        .code-keyword {
+            color: #007bff; /* Highlight keywords */
+        }
+        .code-string {
+            color: #28a745; /* Green for strings */
+        }
+        .code-function {
+            color: #6f42c1; /* Purple for function names */
+        }
+        .code-type {
+            color: #d73a49; /* Red for types */
+        }
+        .code-variable {
+            color: #fd7e14; /* Orange for variables */
+        }
+        .dark-mode .code-comment {
+            color: #8f8f8f;
+        }
+        .dark-mode .code-keyword {
+            color: #82aaff;
+        }
+        .dark-mode .code-string {
+            color: #a8e6cf;
+        }
+        .dark-mode .code-function {
+            color: #e0b0ff;
+        }
+        .dark-mode .code-type {
+            color: #ffb3b3;
+        }
+        .dark-mode .code-variable {
+            color: #ffd166;
+        }
+
+        .diagram-placeholder {
+            background-color: var(--code-bg-light);
+            border: 1px dashed var(--card-border-light);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px auto;
+            font-style: italic;
+            color: var(--sub-heading-color-light);
+            max-width: 80%;
+        }
+        .diagram-placeholder pre {
+            background-color: transparent; /* Make background transparent for diagrams */
+            border: none;
+            box-shadow: none;
+            font-size: 0.8em; /* Slightly smaller font for diagrams */
+        }
+        .diagram-placeholder pre code {
+            color: var(--text-color-light); /* Ensure diagram text is readable */
+            text-align: left; /* Keep ASCII art left-aligned */
+        }
+
+        a {
+            color: var(--link-color-light);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: var(--highlight-color-light);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: var(--sub-heading-color-light);
+            font-size: 0.9em;
+            background: var(--card-bg-light);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--card-border-light);
+            box-shadow: 0 -4px 30px var(--shadow-color);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Chapter 6: Interprocess Communication</h1>
+        <div class="dark-mode-toggle">
+            <label class="switch">
+                <input type="checkbox" id="darkModeToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </header>
+
+    <main>
+        <section id="introduction">
+            <h2>6.1 Introduction: The Necessity of Collaboration</h2>
+            <p>
+                In the preceding chapters, we delved deep into the core concepts of process management, memory management, and file systems. We explored how the operating system meticulously creates and isolates processes, each running within its own virtual address space, providing a robust security boundary and preventing accidental interference. This isolation is fundamental for system stability and multi-user environments. However, the real world often demands more than mere isolation; it requires collaboration. Modern applications are rarely monolithic entities; they are often composed of multiple cooperating processes or threads, each responsible for a specific task. Consider a web server that spawns child processes to handle incoming requests, or a complex scientific simulation where different processes compute parts of a larger problem. For these distributed or parallel tasks to function correctly, processes must be able to share information and synchronize their activities. This is precisely where Interprocess Communication (IPC) mechanisms come into play.
+            </p>
+            <p>
+                Interprocess Communication refers to the set of techniques and tools that an operating system provides to allow separate processes to communicate with each other. These mechanisms are the very fabric that enables complex, multi-component applications to operate cohesively. Without robust IPC, processes would remain isolated islands, severely limiting the capabilities and efficiency of an operating system and the applications built upon it.
+            </p>
+            <h3>6.1.1 Why IPC? The Challenges of Cooperation</h3>
+            <p>
+                The inherent isolation of processes, while beneficial for security and stability, presents several challenges when cooperation is required:
+            </p>
+            <ul>
+                <li>
+                    <strong>Information Exchange:</strong> Processes often need to share data – whether it's the result of a computation, a configuration parameter, or a status update. Without IPC, data exchange would be cumbersome, perhaps requiring writing to temporary files, which is slow and inefficient.
+                </li>
+                <li>
+                    <strong>Synchronization:</strong> When multiple processes access shared resources (e.g., a shared memory region, a file, or even a printer), their operations must be coordinated to prevent race conditions and ensure data consistency. Imagine two processes trying to increment a shared counter simultaneously; without proper synchronization, the final value might be incorrect.
+                </li>
+                <li>
+                    <strong>Resource Sharing:</strong> While processes have their own virtual address spaces, sharing physical resources (like memory buffers or hardware devices) efficiently often necessitates explicit IPC mechanisms.
+                </li>
+                <li>
+                    <strong>Event Notification:</strong> One process might need to notify another process about a specific event, such as the completion of a task or the occurrence of an error.
+                </li>
+            </ul>
+            <p>
+                The operating system provides a diverse set of IPC mechanisms, each with its own trade-offs in terms of speed, complexity, flexibility, and suitability for different communication patterns. We will explore the most common and fundamental of these in detail, focusing on their underlying implementation and how they are utilized across various operating systems.
+            </p>
+        </section>
+
+        <section id="shared-memory">
+            <h2>6.2 Shared Memory: The Fastest Lane</h2>
+            <h3>6.2.1 Core Concept and Working</h3>
+            <p>
+                Shared memory is arguably the fastest form of Interprocess Communication. Unlike other IPC mechanisms that involve the kernel mediating data transfer (e.g., copying data between kernel buffers and user-space), shared memory allows multiple processes to directly access the same region of physical memory. The operating system's role is primarily limited to setting up this shared region and mapping it into the virtual address spaces of the participating processes. Once set up, data transfer becomes a direct memory access operation, bypassing the kernel entirely for read/write operations.
+            </p>
+            <p>
+                The core idea is simple: a designated segment of RAM is made accessible to multiple processes. Each process maps this shared segment into its own virtual address space. Crucially, while the virtual addresses used by each process to access the shared segment might differ, they all resolve to the same underlying physical memory pages.
+            </p>
+            <div class="diagram-placeholder">
+                <h4>Diagram 6.1: Shared Memory Mechanism</h4>
+                <pre><code>
++-----------------+                      +-----------------+
+|   Process 1     |                      |   Process 2     |
+| Virtual Addr Sp |                      | Virtual Addr Sp |
+| +-------------+ |                      | +-------------+ |
+| | VA: 0x1000  | |  &lt;--- maps to ---&gt;   | | VA: 0x2000  | |
+| +-------------+ |                      | +-------------+ |
++-------|---------+                      +-------|---------+
+        |                                        |
+        |       SHARED MEMORY REGION             |
+        |       (Physical Memory)                |
+        |                                        |
+        +-------+================================+
+                |                                |
+                |   Physical Address Space (PA)  |
+                |   e.g., PA: 0x8000             |
+                |                                |
+                +================================+
+                </code></pre>
+                <p>
+                    Illustrates two processes, P1 and P2, mapping the same physical memory region into their distinct virtual address spaces. Both P1's virtual address X and P2's virtual address Y map to the same physical address Z in the shared segment.
+                </p>
+            </div>
+            <p>
+                However, this speed comes with a significant caveat: shared memory offers no inherent synchronization. Processes accessing shared memory must explicitly coordinate their access using other IPC mechanisms like semaphores or mutexes to prevent race conditions and ensure data consistency. Without proper synchronization, writes from one process might overwrite data before another process has read it, leading to corruption or incorrect state.
+            </p>
+            <h3>6.2.2 Implementation Details</h3>
+            <p>
+                The implementation of shared memory relies heavily on the operating system's memory management unit (MMU) and virtual memory capabilities.
+            </p>
+            <ol>
+                <li>
+                    <strong>Creation:</strong> A process requests the OS to create a shared memory segment of a specific size. The OS allocates physical memory pages for this segment.
+                </li>
+                <li>
+                    <strong>Attachment/Mapping:</strong> Participating processes then "attach" to this shared segment. This involves the OS adding entries to the process's page table that map a range of virtual addresses in the process's address space to the physical pages of the shared segment.
+                </li>
+                <li>
+                    <strong>Access:</strong> Once mapped, processes can read from and write to this memory region as if it were their own private memory, using standard load/store instructions.
+                </li>
+                <li>
+                    <strong>Detachment:</strong> When a process no longer needs the shared segment, it detaches from it, removing the mapping from its page table.
+                </li>
+                <li>
+                    <strong>Deletion:</strong> The shared segment typically persists until all processes have detached from it or until explicitly marked for deletion (e.g., by the creating process or when the system reboots).
+                </li>
+            </ol>
+            <h3>6.2.3 Shared Memory in Different Operating Systems</h3>
+
+            <h4>Unix/Linux (System V IPC and POSIX IPC)</h4>
+            <p>
+                Unix-like systems offer two primary APIs for shared memory: System V IPC and POSIX IPC. POSIX IPC is generally preferred for new development due to its simpler API and better portability.
+            </p>
+            <ul>
+                <li>
+                    <strong>System V Shared Memory:</strong>
+                    <ul>
+                        <li><code><span class="code-function">shmget</span>()</code>: Creates a new shared memory segment or gets an ID for an existing one. It returns a shared memory identifier (<code>shmid</code>).</li>
+                        <li><code><span class="code-function">shmat</span>()</code>: Attaches the shared memory segment (identified by <code>shmid</code>) to the calling process's address space. It returns a pointer to the attached memory.</li>
+                        <li><code><span class="code-function">shmdt</span>()</code>: Detaches the shared memory segment from the calling process's address space.</li>
+                        <li><code><span class="code-function">shmctl</span>()</code>: Performs control operations on the shared memory segment, such as deleting it or querying its status.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>POSIX Shared Memory:</strong>
+                    <ul>
+                        <li><code><span class="code-function">shm_open</span>()</code>: Creates and opens a new shared memory object or opens an existing one. It returns a file descriptor. These objects are often represented as files in the <code>/dev/shm</code> directory (on Linux).</li>
+                        <li><code><span class="code-function">ftruncate</span>()</code>: Sets the size of the shared memory object.</li>
+                        <li><code><span class="code-function">mmap</span>()</code>: Maps the shared memory object (identified by its file descriptor) into the calling process's address space. This function is also used for memory-mapping files.</li>
+                        <li><code><span class="code-function">munmap</span>()</code>: Unmaps the shared memory object.</li>
+                        <li><code><span class="code-function">shm_unlink</span>()</code>: Removes a shared memory object, causing it to be destroyed when all processes have unmapped it.</li>
+                    </ul>
+                </li>
+            </ul>
+            <p>
+                <strong>Code Snippet: POSIX Shared Memory Example (Linux)</strong>
+            </p>
+            <pre><code><span class="code-comment">// shm_writer.c</span>
+<span class="code-comment">#include &lt;stdio.h&gt;</span>
+<span class="code-comment">#include &lt;stdlib.h&gt;</span>
+<span class="code-comment">#include &lt;string.h&gt;</span>
+<span class="code-comment">#include &lt;sys/mman.h&gt;</span>
+<span class="code-comment">#include &lt;sys/stat.h&gt;</span> <span class="code-comment">// For mode constants</span>
+<span class="code-comment">#include &lt;fcntl.h&gt;</span>    <span class="code-comment">// For O_CREAT, O_RDWR</span>
+<span class="code-comment">#include &lt;unistd.h&gt;</span>   <span class="code-comment">// For ftruncate</span>
+
+<span class="code-keyword">const</span> <span class="code-type">char</span>* <span class="code-variable">SHM_NAME</span> = <span class="code-string">"/my_shared_memory"</span>;
+<span class="code-keyword">const</span> <span class="code-type">int</span> <span class="code-variable">SHM_SIZE</span> = 1024;
+
+<span class="code-type">int</span> <span class="code-function">main</span>() {
+    <span class="code-type">int</span> <span class="code-variable">fd</span>;
+    <span class="code-type">void</span>* <span class="code-variable">ptr</span>;
+
+    <span class="code-comment">// Create shared memory object</span>
+    <span class="code-variable">fd</span> = <span class="code-function">shm_open</span>(<span class="code-variable">SHM_NAME</span>, <span class="code-type">O_CREAT</span> | <span class="code-type">O_RDWR</span>, 0666);
+    <span class="code-keyword">if</span> (<span class="code-variable">fd</span> == -1) {
+        <span class="code-function">perror</span>(<span class="code-string">"shm_open"</span>);
+        <span class="code-function">exit</span>(EXIT_FAILURE);
+    }
+
+    <span class="code-comment">// Set size of shared memory object</span>
+    <span class="code-function">ftruncate</span>(<span class="code-variable">fd</span>, <span class="code-variable">SHM_SIZE</span>);
+
+    <span class="code-comment">// Map shared memory object into process address space</span>
+    <span class="code-variable">ptr</span> = <span class="code-function">mmap</span>(NULL, <span class="code-variable">SHM_SIZE</span>, <span class="code-type">PROT_READ</span> | <span class="code-type">PROT_WRITE</span>, <span class="code-type">MAP_SHARED</span>, <span class="code-variable">fd</span>, 0);
+    <span class="code-keyword">if</span> (<span class="code-variable">ptr</span> == <span class="code-type">MAP_FAILED</span>) {
+        <span class="code-function">perror</span>(<span class="code-string">"mmap"</span>);
+        <span class="code-function">exit</span>(EXIT_FAILURE);
+    }
+
+    <span class="code-function">printf</span>(<span class="code-string">"Writer: Writing to shared memory...\n"</span>);
+    <span class="code-function">sprintf</span>((<span class="code-type">char</span>*)<span class="code-variable">ptr</span>, <span class="code-string">"Hello from shared memory!"</span>);
+
+    <span class="code-function">printf</span>(<span class="code-string">"Writer: Waiting for reader (press Enter to detach)...\n"</span>);
+    <span class="code-function">getchar</span>();
+
+    <span class="code-comment">// Unmap and close</span>
+    <span class="code-function">munmap</span>(<span class="code-variable">ptr</span>, <span class="code-variable">SHM_SIZE</span>);
+    <span class="code-function">close</span>(<span class="code-variable">fd</span>);
+    <span class="code-function">shm_unlink</span>(<span class="code-variable">SHM_NAME</span>); <span class="code-comment">// Remove shared memory object</span>
+
+    <span class="code-function">printf</span>(<span class="code-string">"Writer: Exiting.\n"</span>);
+    <span class="code-keyword">return</span> 0;
+}
+</code></pre>
+            <pre><code><span class="code-comment">// shm_reader.c</span>
+<span class="code-comment">#include &lt;stdio.h&gt;</span>
+<span class="code-comment">#include &lt;stdlib.h&gt;</span>
+<span class="code-comment">#include &lt;string.h&gt;</span>
+<span class="code-comment">#include &lt;sys/mman.h&gt;</span>
+<span class="code-comment">#include &lt;sys/stat.h&gt;</span>
+<span class="code-comment">#include &lt;fcntl.h&gt;</span>
+<span class="code-comment">#include &lt;unistd.h&gt;</span>
+
+<span class="code-keyword">const</span> <span class="code-type">char</span>* <span class="code-variable">SHM_NAME</span> = <span class="code-string">"/my_shared_memory"</span>;
+<span class="code-keyword">const</span> <span class="code-type">int</span> <span class="code-variable">SHM_SIZE</span> = 1024;
+
+<span class="code-type">int</span> <span class="code-function">main</span>() {
+    <span class="code-type">int</span> <span class="code-variable">fd</span>;
+    <span class="code-type">void</span>* <span class="code-variable">ptr</span>;
+
+    <span class="code-comment">// Open shared memory object (must exist)</span>
+    <span class="code-variable">fd</span> = <span class="code-function">shm_open</span>(<span class="code-variable">SHM_NAME</span>, <span class="code-type">O_RDONLY</span>, 0666);
+    <span class="code-keyword">if</span> (<span class="code-variable">fd</span> == -1) {
+        <span class="code-function">perror</span>(<span class="code-string">"shm_open"</span>);
+        <span class="code-function">exit</span>(EXIT_FAILURE);
+    }
+
+    <span class="code-comment">// Map shared memory object into process address space</span>
+    <span class="code-variable">ptr</span> = <span class="code-function">mmap</span>(NULL, <span class="code-variable">SHM_SIZE</span>, <span class="code-type">PROT_READ</span>, <span class="code-type">MAP_SHARED</span>, <span class="code-variable">fd</span>, 0);
+    <span class="code-keyword">if</span> (<span class="code-variable">ptr</span> == <span class="code-type">MAP_FAILED</span>) {
+        <span class="code-function">perror</span>(<span class="code-string">"mmap"</span>);
+        <span class="code-function">exit</span>(EXIT_FAILURE);
+    }
+
+    <span class="code-function">printf</span>(<span class="code-string">"Reader: Reading from shared memory: '%s'\n"</span>, (<span class="code-type">char</span>*)<span class="code-variable">ptr</span>);
+
+    <span class="code-comment">// Unmap and close</span>
+    <span class="code-function">munmap</span>(<span class="code-variable">ptr</span>, <span class="code-variable">SHM_SIZE</span>);
+    <span class="code-function">close</span>(<span class="code-variable">fd</span>);
+
+    <span class="code-function">printf</span>(<span class="code-string">"Reader: Exiting.\n"</span>);
+    <span class="code-keyword">return</span> 0;
+}
+</code></pre>
+            <p>
+                To compile and run:
+                <pre><code><span class="code-function">gcc</span> shm_writer.c -o shm_writer -lrt
+<span class="code-function">gcc</span> shm_reader.c -o shm_reader -lrt
+./shm_writer   <span class="code-comment">// In one terminal</span>
+./shm_reader   <span class="code-comment">// In another terminal, then press Enter in writer's terminal</span>
+                </code></pre>
+            </p>
+
+            <h4>Windows</h4>
+            <p>
+                Windows provides shared memory through "file mapping objects" (also known as memory-mapped files), which can be backed by the paging file or a physical file. This is the primary and most robust way to achieve shared memory IPC on Windows.
+            </p>
+            <ul>
+                <li><code><span class="code-function">CreateFileMapping</span>()</code>: Creates or opens a named or unnamed file mapping object. This function effectively allocates a region of virtual address space in the kernel that can be shared.</li>
+                <li><code><span class="code-function">MapViewOfFile</span>()</code>: Maps a view of the file mapping object into the address space of the calling process. It returns a pointer to the start of the mapped view.</li>
+                <li><code><span class="code-function">UnmapViewOfFile</span>()</code>: Unmaps a previously mapped view of a file mapping object.</li>
+                <li><code><span class="code-function">CloseHandle</span>()</code>: Closes the handle to the file mapping object. The object itself is destroyed when all handles are closed.</li>
+            </ul>
+
+            <h4>FreeRTOS (Real-time Operating System)</h4>
+            <p>
+                FreeRTOS is a real-time operating system primarily designed for embedded systems. Its "processes" are typically referred to as "tasks," and they share a single address space (or utilize memory protection units (MPU) for limited isolation). Therefore, explicit "shared memory" IPC in the Unix/Windows sense (mapping distinct virtual address spaces to common physical memory) is not a common pattern. All tasks inherently share the global memory.
+            </p>
+            <p>
+                Instead, FreeRTOS tasks achieve data sharing and coordination through:
+            </p>
+            <ul>
+                <li>
+                    <strong>Global Variables/Buffers:</strong> The simplest form of shared memory is just declaring global variables or buffers that all tasks can access. This requires strict synchronization using mutexes or semaphores (which we will cover later).
+                </li>
+                <li>
+                    <strong>Memory Pools:</strong> For dynamic memory allocation and sharing, FreeRTOS might use memory pools (e.g., FreeRTOS's built-in heap or custom memory allocators) from which chunks of memory can be allocated and passed (as pointers) between tasks via queues.
+                </li>
+            </ul>
+            <p>
+                The concept of shared memory in FreeRTOS is more about managing concurrent access to globally accessible data than about mapping separate address spaces.
+            </p>
+        </section>
+
+        <section id="message-queues">
+            <h2>6.3 Message Queues: Structured Communication</h2>
+            <h3>6.3.1 Core Concept and Working</h3>
+            <p>
+                Message queues provide an indirect, asynchronous method of communication between processes. Instead of direct memory access, processes communicate by sending and receiving messages via a queue managed by the operating system kernel. A sender process places a message onto the queue, and a receiver process retrieves messages from it. This mechanism decouples the sender and receiver, meaning they don't need to be running simultaneously or coordinate their timing as tightly as with shared memory.
+            </p>
+            <p>
+                Each message typically has a type (or priority) and a data payload. Messages are stored in the queue in the order they are sent (or by priority), and receivers can often choose to retrieve messages of a specific type or simply the next available message. The kernel handles the buffering, synchronization (e.g., blocking send/receive operations), and delivery of messages.
+            </p>
+            <div class="diagram-placeholder">
+                <h4>Diagram 6.2: Message Queue Mechanism</h4>
+                <pre><code>
++------------+       +----------------------------+       +------------+
+|  Process A | ----&gt; |        Kernel-Managed      | ----&gt; |  Process B |
+|  (Sender)  |  Msg M1|       Message Queue        | Msg M1| (Receiver) |
+|            | ----&gt; |                            | ----&gt; |            |
+|  send(M1)  |  Msg M2|  [ M1 ] &lt;- M2 &lt;- [ M3 ]     | Msg M2| receive()  |
+|  send(M2)  |        |  (FIFO Buffer)             |       | receive()  |
++------------+       +----------------------------+       +------------+
+                       ^          ^          ^
+                       |          |          |
+                       |  Kernel Buffer     |
+                       | (Messages copied)  |
+                </code></pre>
+                <p>
+                    Shows Process A sending messages to a kernel-managed Message Queue, and Process B receiving messages from it. Messages are buffered within the kernel.
+                </p>
+            </div>
+            <p>
+                **Advantages:**
+            </p>
+            <ul>
+                <li><strong>Decoupling:</strong> Sender and receiver don't need to be active at the same time. Messages are buffered.</li>
+                <li><strong>Synchronization:</strong> The kernel automatically handles blocking/non-blocking operations. A process trying to read from an empty queue can be blocked until a message arrives. A process trying to write to a full queue can be blocked until space becomes available.</li>
+                <li><strong>Message Types/Priorities:</strong> Allows for more flexible message handling.</li>
+                <li><strong>Data Integrity:</strong> Messages are typically copied, so data integrity is maintained (no direct overwrites).</li>
+            </ul>
+            <p>
+                **Disadvantages:**
+            </p>
+            <ul>
+                <li><strong>Overhead:</strong> Involves kernel calls and data copying (from user space to kernel space, then from kernel space to receiver's user space), making it slower than shared memory.</li>
+                <li><strong>Fixed Size:</strong> Message queues often have limits on the total number of messages or total bytes, and individual message sizes.</li>
+            </ul>
+
+            <h3>6.3.2 Implementation Details</h3>
+            <p>
+                The operating system maintains a data structure for each message queue, which includes:
+            </p>
+            <ul>
+                <li>A unique identifier for the queue.</li>
+                <li>A linked list or array of messages.</li>
+                <li>Information about the queue's limits (max messages, max bytes).</li>
+                <li>Wait queues for processes blocked on sending or receiving.</li>
+            </ul>
+            <p>
+                When a message is sent, the kernel allocates memory for it within its own space, copies the data from the sender's buffer, and adds it to the queue. When received, the kernel copies the data to the receiver's buffer and deallocates the message's kernel memory.
+            </p>
+
+            <h3>6.3.3 Message Queues in Different Operating Systems</h3>
+
+            <h4>Unix/Linux (System V IPC and POSIX IPC)</h4>
+            <p>
+                Similar to shared memory, Unix-like systems provide both System V and POSIX message queue APIs.
+            </p>
+            <ul>
+                <li>
+                    <strong>System V Message Queues:</strong>
+                    <ul>
+                        <li><code><span class="code-function">msgget</span>()</code>: Creates a new message queue or gets an ID for an existing one.</li>
+                        <li><code><span class="code-function">msgsnd</span>()</code>: Sends a message to the queue.</li>
+                        <li><code><span class="code-function">msgrcv</span>()</code>: Receives a message from the queue.</li>
+                        <li><code><span class="code-function">msgctl</span>()</code>: Performs control operations.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>POSIX Message Queues:</strong>
+                    <ul>
+                        <li><code><span class="code-function">mq_open</span>()</code>: Creates and opens a message queue. Returns a message queue descriptor.</li>
+                        <li><code><span class="code-function">mq_send</span>()</code>: Sends a message. Includes a priority parameter.</li>
+                        <li><code><span class="code-function">mq_receive</span>()</code>: Receives a message. Can specify to receive by priority.</li>
+                        <li><code><span class="code-function">mq_close</span>()</code>: Closes the message queue descriptor.</li>
+                        <li><code><span class="code-function">mq_unlink</span>()</code>: Removes a message queue.</li>
+                        <li><code><span class="code-function">mq_getattr</span>()</code> / <code><span class="code-function">mq_setattr</span>()</code>: Query/set queue attributes.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>Windows</h4>
+            <p>
+                Windows does not have a direct kernel-level analogue to POSIX message queues in its general IPC mechanisms like Unix. However, it offers several ways to achieve message-passing paradigms:
+            </p>
+            <ul>
+                <li>
+                    <strong>Windows Messages (GUI Applications):</strong> The most common form of message passing on Windows is the "Windows Message" system used extensively in GUI applications. Messages (e.g., mouse clicks, key presses) are placed into a thread's message queue (<code><span class="code-function">GetMessage</span>()</code>, <code><span class="code-function">PeekMessage</span>()</code>) and dispatched to window procedures (<code><span class="code-function">DispatchMessage</span>()</code>). Processes can send messages to specific windows using <code><span class="code-function">SendMessage</span>()</code> (synchronous) or <code><span class="code-function">PostMessage</span>()</code> (asynchronous). While powerful for GUI, this is not a general-purpose IPC for arbitrary data between non-GUI processes.
+                </li>
+                <li>
+                    <strong>Mailslots:</strong> A simple, datagram-based IPC mechanism for one-to-many communication across a network. It's similar to a message queue in that it holds messages, but it's connectionless and not guaranteed delivery.
+                </li>
+                <li>
+                    <strong>Building on top of other IPC:</strong> Developers often build message queue-like functionality on top of other Windows IPC primitives like named pipes or even shared memory (with custom synchronization). For more complex, enterprise-level messaging, Windows offers Microsoft Message Queuing (MSMQ), but this is a much higher-level service, not a raw OS primitive.
+                </li>
+            </ul>
+
+            <h4>FreeRTOS (Real-time Operating System)</h4>
+            <p>
+                Message queues are a cornerstone of inter-task communication in FreeRTOS. They are a fundamental and highly efficient mechanism for passing data between tasks.
+            </p>
+            <ul>
+                <li><code><span class="code-function">xQueueCreate</span>()</code>: Creates a new queue. You specify the number of items the queue can hold and the size of each item.</li>
+                <li><code><span class="code-function">xQueueSend</span>()</code>: Sends an item to the queue. Can specify a timeout if the queue is full.</li>
+                <li><code><span class="code-function">xQueueReceive</span>()</code>: Receives an item from the queue. Can specify a timeout if the queue is empty.</li>
+                <li><code><span class="code-function">xQueueSendFromISR</span>()</code> / <code><span class="code-function">xQueueReceiveFromISR</span>()</code>: ISR-safe versions for use within interrupt service routines.</li>
+                <li>FreeRTOS queues can store actual data (by copying it) or pointers to data (requiring external memory management like a memory pool).</li>
+            </ul>
+            <p>
+                <strong>Code Snippet: FreeRTOS Message Queue Example</strong>
+            </p>
+            <pre><code><span class="code-comment">#include &lt;FreeRTOS.h&gt;</span>
+<span class="code-comment">#include &lt;task.h&gt;</span>
+<span class="code-comment">#include &lt;queue.h&gt;</span>
+<span class="code-comment">#include &lt;stdio.h&gt;</span> <span class="code-comment">// For printf, usually redirected to UART</span>
+
+<span class="code-type">QueueHandle_t</span> <span class="code-variable">xMessageQueue</span>;
+
+<span class="code-comment">// Sender Task</span>
+<span class="code-keyword">void</span> <span class="code-function">vSenderTask</span>(<span class="code-keyword">void</span>* <span class="code-variable">pvParameters</span>) {
+    <span class="code-type">int</span> <span class="code-variable">messageCounter</span> = 0;
+    <span class="code-type">char</span> <span class="code-variable">txBuffer</span>[50];
+    <span class="code-keyword">for</span> (;;) {
+        <span class="code-function">sprintf</span>(<span class="code-variable">txBuffer</span>, <span class="code-string">"Hello from Sender! Msg #%d"</span>, <span class="code-variable">messageCounter</span>++);
+        <span class="code-comment">// Send message to queue, block for 100 ticks if queue is full</span>
+        <span class="code-keyword">if</span> (<span class="code-function">xQueueSend</span>(<span class="code-variable">xMessageQueue</span>, (<span class="code-type">void</span>*)&<span class="code-variable">txBuffer</span>, (<span class="code-type">TickType_t</span>)100) != <span class="code-type">pdPASS</span>) {
+            <span class="code-function">printf</span>(<span class="code-string">"Sender: Could not send message, queue full.\n"</span>);
+        } <span class="code-keyword">else</span> {
+            <span class="code-function">printf</span>(<span class="code-string">"Sender: Sent '%s'\n"</span>, <span class="code-variable">txBuffer</span>);
+        }
+        <span class="code-function">vTaskDelay</span>(<span class="code-function">pdMS_TO_TICKS</span>(500)); <span class="code-comment">// Send every 500ms</span>
+    }
+}
+
+<span class="code-comment">// Receiver Task</span>
+<span class="code-keyword">void</span> <span class="code-function">vReceiverTask</span>(<span class="code-keyword">void</span>* <span class="code-variable">pvParameters</span>) {
+    <span class="code-type">char</span> <span class="code-variable">rxBuffer</span>[50];
+    <span class="code-keyword">for</span> (;;) {
+        <span class="code-comment">// Receive message from queue, block indefinitely if queue is empty</span>
+        <span class="code-keyword">if</span> (<span class="code-function">xQueueReceive</span>(<span class="code-variable">xMessageQueue</span>, (<span class="code-type">void</span>*)&<span class="code-variable">rxBuffer</span>, <span class="code-type">portMAX_DELAY</span>) == <span class="code-type">pdPASS</span>) {
+            <span class="code-function">printf</span>(<span class="code-string">"Receiver: Received '%s'\n"</span>, <span class="code-variable">rxBuffer</span>);
+        } <span class="code-keyword">else</span> {
+            <span class="code-function">printf</span>(<span class="code-string">"Receiver: No message received (should not happen with portMAX_DELAY).\n"</span>);
+        }
+    }
+}
+
+<span class="code-comment">// Main function (simulated environment)</span>
+<span class="code-type">int</span> <span class="code-function">main</span>(<span class="code-keyword">void</span>) {
+    <span class="code-comment">// Create a queue that can hold 5 messages, each max 50 bytes long</span>
+    <span class="code-variable">xMessageQueue</span> = <span class="code-function">xQueueCreate</span>(5, <span class="code-keyword">sizeof</span>(<span class="code-type">char</span>[50]));
+
+    <span class="code-keyword">if</span> (<span class="code-variable">xMessageQueue</span> != NULL) {
+        <span class="code-comment">// Create tasks</span>
+        <span class="code-function">xTaskCreate</span>(<span class="code-function">vSenderTask</span>, <span class="code-string">"Sender"</span>, <span class="code-type">configMINIMAL_STACK_SIZE</span>, NULL, 1, NULL);
+        <span class="code-function">xTaskCreate</span>(<span class="code-function">vReceiverTask</span>, <span class="code-string">"Receiver"</span>, <span class="code-type">configMINIMAL_STACK_SIZE</span>, NULL, 2, NULL);
+        
+        <span class="code-comment">// Start the scheduler</span>
+        <span class="code-function">vTaskStartScheduler</span>();
+    } <span class="code-keyword">else</span> {
+        <span class="code-function">printf</span>(<span class="code-string">"Failed to create queue.\n"</span>);
+    }
+
+    <span class="code-comment">// Should never reach here if scheduler starts successfully</span>
+    <span class="code-keyword">return</span> 0;
+}
+</code></pre>
+        </section>
+
+        <section id="pipes">
+            <h2>6.4 Pipes: Sequential Byte Streams</h2>
+            <h3>6.4.1 Core Concept and Working</h3>
+            <p>
+                Pipes are one of the oldest and simplest forms of IPC in Unix-like systems, enabling unidirectional byte-stream communication between processes. They operate on a producer-consumer model, where data written to one end of the pipe is read from the other end. The operating system manages an internal buffer for the pipe.
+            </p>
+            <p>
+                There are two main types of pipes:
+            </p>
+            <ol>
+                <li>
+                    <strong>Unnamed Pipes (Anonymous Pipes):</strong> These are temporary, created for specific parent-child or sibling process communication. They exist only as long as the processes using them are alive and are typically passed from a parent to its child process after a <code><span class="code-function">fork</span>()</code> call. They have no name in the file system.
+                </li>
+                <li>
+                    <strong>Named Pipes (FIFOs - First-In, First-Out):</strong> These have a name in the file system (appearing as a special file type). They can be used by any two unrelated processes, provided they know the FIFO's name. They persist until explicitly deleted or the system reboots.
+                </li>
+            </ol>
+            <p>
+                Both types of pipes offer a byte stream interface, meaning there's no inherent message boundary; data is read as a continuous sequence of bytes, similar to reading from a file.
+            </p>
+            <div class="diagram-placeholder">
+                <h4>Diagram 6.3: Unnamed Pipe between Parent and Child</h4>
+                <pre><code>
++-----------------+      +-----------------+
+|     Parent      |      |      Child      |
+|     Process     |      |     Process     |
++-----------------+      +-----------------+
+        |                        |
+        | pipefd[1] (Write End)  | pipefd[0] (Read End)
+        |  (Parent keeps)        |  (Child keeps)
+        V                        ^
+        +------------------------+
+        |  Kernel Pipe Buffer    |
+        |  (Unidirectional FIFO) |
+        +------------------------+
+             |       ^
+             | Data  | Data
+             | Wrote | Read
+             V       |
+          (Parent)   (Child)
+
+Parent closes pipefd[0] (its unused read end)
+Child closes pipefd[1] (its unused write end)
+                </code></pre>
+                <p>
+                    Illustrates a parent process creating a pipe, then forking a child. The parent typically closes the read end and writes to the write end, while the child closes the write end and reads from the read end.
+                </p>
+            </div>
+            <div class="diagram-placeholder">
+                <h4>Diagram 6.4: Named Pipe (FIFO) between Unrelated Processes</h4>
+                <pre><code>
++-----------------+                     +-----------------+
+|   Process A     |                     |   Process B     |
++-----------------+                     +-----------------+
+        |                                       |
+        | open("/tmp/my_fifo", O_WRONLY)        | open("/tmp/my_fifo", O_RDONLY)
+        | write()                               | read()
+        V                                       ^
++-------------------------------------------------+
+|         Named Pipe (FIFO) File                |
+|         /tmp/my_fifo (Special File Type)      |
++-------------------------------------------------+
+        |                                       |
+        |          Kernel Pipe Buffer           |
+        |          (Unidirectional FIFO)        |
+        |                                       |
+        +---------------------------------------+
+                </code></pre>
+                <p>
+                    Shows two unrelated processes communicating via a named pipe, which is represented as a special file in the file system.
+                </p>
+            </div>
+            <p>
+                <strong>Advantages:</strong>
+            </p>
+            <ul>
+                <li><strong>Simplicity:</strong> Easy to use, leveraging familiar file I/O operations (<code><span class="code-function">read</span>()</code>, <code><span class="code-function">write</span>()</code>).</li>
+                <li><strong>Built-in Synchronization:</strong> Reading from an empty pipe blocks until data is available. Writing to a full pipe blocks until space is available.</li>
+            </ul>
+            <p>
+                <strong>Disadvantages:</strong>
+            </p>
+            <ul>
+                <li><strong>Unidirectional:</strong> Data flows in only one direction. For bidirectional communication, two pipes are needed.</li>
+                <li><strong>Byte Stream:</strong> No message boundaries. The application must implement its own framing for messages.</li>
+                <li><strong>Overhead:</strong> Involves data copying through kernel buffers.</li>
+            </ul>
+
+            <h3>6.4.2 Implementation Details</h3>
+            <p>
+                Pipes are implemented by the kernel using a circular buffer. When a pipe is created, the kernel allocates a fixed-size buffer (e.g., 64KB on Linux).
+            </p>
+            <ul>
+                <li><strong>Writing:</strong> Data written to the pipe is copied into the kernel's circular buffer. If the buffer is full, the writing process blocks until space becomes available.</li>
+                <li><strong>Reading:</strong> Data read from the pipe is copied from the kernel's circular buffer to the reading process's buffer. If the buffer is empty, the reading process blocks until data arrives.</li>
+                <li><strong>File Descriptors:</strong> Pipes are accessed using file descriptors, one for the read end and one for the write end.</li>
+            </ul>
+
+            <h3>6.4.3 Pipes in Different Operating Systems</h3>
+
+            <h4>Unix/Linux</h4>
+            <ul>
+                <li>
+                    <strong>Unnamed Pipes:</strong>
+                    <ul>
+                        <li><code><span class="code-function">pipe</span>()</code>: Creates an unnamed pipe. It takes an array of two integers as an argument, which will be populated with the read and write file descriptors for the pipe.</li>
+                        <li>After <code><span class="code-function">fork</span>()</code>, the parent and child close the ends of the pipe they don't need for communication.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Named Pipes (FIFOs):</strong>
+                    <ul>
+                        <li><code><span class="code-function">mkfifo</span>()</code>: Creates a named pipe file in the file system.</li>
+                        <li>Processes then open this special file using <code><span class="code-function">open</span>()</code> (with <code><span class="code-type">O_RDONLY</span></code> or <code><span class="code-type">O_WRONLY</span></code>) and use <code><span class="code-function">read</span>()</code> and <code><span class="code-function">write</span>()</code>, just like regular files.</li>
+                    </ul>
+                </li>
+            </ul>
+            <p>
+                <strong>Code Snippet: Unnamed Pipe Example (Unix/Linux)</strong>
+            </p>
+            <pre><code><span class="code-comment">#include &lt;stdio.h&gt;</span>
+<span class="code-comment">#include &lt;stdlib.h&gt;</span>
+<span class="code-comment">#include &lt;unistd.h&gt;</span> <span class="code-comment">// For pipe(), fork(), read(), write(), close()</span>
+<span class="code-comment">#include &lt;string.h&gt;</span>
+
+<span class="code-keyword">int</span> <span class="code-function">main</span>() {
+    <span class="code-type">int</span> <span class="code-variable">pipefd</span>[2]; <span class="code-comment">// pipefd[0] for read, pipefd[1] for write</span>
+    <span class="code-type">pid_t</span> <span class="code-variable">pid</span>;
+    <span class="code-type">char</span> <span class="code-variable">buffer</span>[50];
+    <span class="code-type">const</span> <span class="code-type">char</span>* <span class="code-variable">message</span> = <span class="code-string">"Hello from parent process!"</span>;
+
+    <span class="code-comment">// Create the pipe</span>
+    <span class="code-keyword">if</span> (<span class="code-function">pipe</span>(<span class="code-variable">pipefd</span>) == -1) {
+        <span class="code-function">perror</span>(<span class="code-string">"pipe"</span>);
+        <span class="code-function">exit</span>(EXIT_FAILURE);
+    }
+
+    <span class="code-comment">// Fork a child process</span>
+    <span class="code-variable">pid</span> = <span class="code-function">fork</span>();
+
+    <span class="code-keyword">if</span> (<span class="code-variable">pid</span> == -1) {
+        <span class="code-function">perror</span>(<span class="code-string">"fork"</span>);
+        <span class="code-function">exit</span>(EXIT_FAILURE);
+    }
+
+    <span class="code-keyword">if</span> (<span class="code-variable">pid</span> == 0) { <span class="code-comment">// Child process</span>
+        <span class="code-function">close</span>(<span class="code-variable">pipefd</span>[1]); <span class="code-comment">// Close unused write end</span>
+        <span class="code-function">printf</span>(<span class="code-string">"Child: Waiting for message...\n"</span>);
+        <span class="code-type">ssize_t</span> <span class="code-variable">bytes_read</span> = <span class="code-function">read</span>(<span class="code-variable">pipefd</span>[0], <span class="code-variable">buffer</span>, <span class="code-keyword">sizeof</span>(<span class="code-variable">buffer</span>) - 1);
+        <span class="code-keyword">if</span> (<span class="code-variable">bytes_read</span> > 0) {
+            <span class="code-variable">buffer</span>[<span class="code-variable">bytes_read</span>] = <span class="code-string">'\0'</span>; <span class="code-comment">// Null-terminate the string</span>
+            <span class="code-function">printf</span>(<span class="code-string">"Child: Received message: '%s'\n"</span>, <span class="code-variable">buffer</span>);
+        } <span class="code-keyword">else</span> {
+            <span class="code-function">perror</span>(<span class="code-string">"read"</span>);
+        }
+        <span class="code-function">close</span>(<span class="code-variable">pipefd</span>[0]); <span class="code-comment">// Close read end</span>
+        <span class="code-function">exit</span>(EXIT_SUCCESS);
+    } <span class="code-keyword">else</span> { <span class="code-comment">// Parent process</span>
+        <span class="code-function">close</span>(<span class="code-variable">pipefd</span>[0]); <span class="code-comment">// Close unused read end</span>
+        <span class="code-function">printf</span>(<span class="code-string">"Parent: Sending message: '%s'\n"</span>, <span class="code-variable">message</span>);
+        <span class="code-function">write</span>(<span class="code-variable">pipefd</span>[1], <span class="code-variable">message</span>, <span class="code-function">strlen</span>(<span class="code-variable">message</span>));
+        <span class="code-function">close</span>(<span class="code-variable">pipefd</span>[1]); <span class="code-comment">// Close write end, signals EOF to reader</span>
+        <span class="code-function">wait</span>(NULL); <span class="code-comment">// Wait for child to finish</span>
+        <span class="code-function">printf</span>(<span class="code-string">"Parent: Child finished, exiting.\n"</span>);
+        <span class="code-keyword">exit</span>(EXIT_SUCCESS);
+    }
+}
+</code></pre>
+
+            <h4>Windows</h4>
+            <p>
+                Windows provides analogous functionality:
+            </p>
+            <ul>
+                <li>
+                    <strong>Anonymous Pipes:</strong>
+                    <ul>
+                        <li><code><span class="code-function">CreatePipe</span>()</code>: Creates an anonymous pipe. Returns two handles, one for the read end and one for the write end.</li>
+                        <li>Used primarily for communication between a parent and its child process (e.g., redirecting standard I/O of child processes).</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Named Pipes:</strong>
+                    <ul>
+                        <li><code><span class="code-function">CreateNamedPipe</span>()</code>: Creates a named pipe. These pipes are connection-oriented, allowing for more complex client-server interactions, including support for multiple client connections and message-mode vs. byte-mode.</li>
+                        <li>Clients connect using <code><span class="code-function">CreateFile</span>()</code>, and data is exchanged using <code><span class="code-function">ReadFile</span>()</code> and <code><span class="code-function">WriteFile</span>()</code>.</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h4>FreeRTOS (Real-time Operating System)</h4>
+            <p>
+                FreeRTOS does not have a direct equivalent of Unix-like pipes (named or unnamed) as a core IPC mechanism. The concept of "pipes" typically implies a kernel-managed, buffered byte stream for processes that might not share memory.
+            </p>
+            <ul>
+                <li>
+                    <strong>Stream Buffers / Message Buffers:</strong> FreeRTOS offers "Stream Buffers" and "Message Buffers" which are lightweight, single-reader, single-writer (Stream Buffer) or multiple-reader, multiple-writer (Message Buffer) byte-stream/message-stream implementations. These are used for efficient data transfer between tasks or between an ISR and a task within the same address space. They function similarly to pipes in that they use a circular buffer for data.
+                </li>
+                <li>
+                    For task-to-task communication, queues are generally preferred due to their explicit message boundaries and ease of use for structured data.
+                </li>
+            </ul>
+        </section>
+
+        <section id="semaphores-mutexes">
+            <h2>6.5 Semaphores and Mutexes: The Synchronizers</h2>
+            <h3>6.5.1 Core Concept and Working</h3>
+            <p>
+                While not directly used for data transfer, semaphores and mutexes are crucial IPC mechanisms for <strong>synchronization</strong>. They are fundamental for coordinating access to shared resources (like shared memory segments, files, or critical sections of code) among multiple processes or threads, preventing race conditions and ensuring data consistency.
+            </p>
+            <h4>Semaphores</h4>
+            <p>
+                A semaphore is a signaling mechanism. It's an integer variable that is accessed only through two atomic operations:
+            </p>
+            <ul>
+                <li>
+                    <strong>Wait (P or <code><span class="code-function">sem_wait</span>()</code>):</strong> Decrements the semaphore value. If the value becomes negative, the process calling wait is blocked until the semaphore value becomes non-negative.
+                </li>
+                <li>
+                    <strong>Signal (V or <code><span class="code-function">sem_post</span>()</code>):</strong> Increments the semaphore value. If there are processes blocked on this semaphore, one of them is unblocked.
+                </li>
+            </ul>
+            <p>
+                There are two main types:
+            </p>
+            <ul>
+                <li>
+                    <strong>Counting Semaphores:</strong> Can take on any non-negative integer value. They are used to control access to a resource that has multiple identical instances. The semaphore is initialized to the number of available resources.
+                </li>
+                <li>
+                    <strong>Binary Semaphores:</strong> Can only take values 0 or 1. They are essentially a specialized form of counting semaphore, often used for mutual exclusion, similar to a mutex.
+                </li>
+            </ul>
+            <div class="diagram-placeholder">
+                <h4>Diagram 6.5: Processes using a Semaphore for Shared Resource Access</h4>
+                <pre><code>
+             +-----------------+   +-----------------+
+             |     Process 1   |   |     Process 2   |
+             +-----------------+   +-----------------+
+                     |                     |
+                     | sem_wait()          | sem_wait()
+                     | (Acquire Lock)      | (Acquire Lock)
+                     V                     V
+        +-------------------------------------+
+        |  Binary Semaphore (Initial value: 1)|
+        |  'sem_sync'                         |
+        +-------------------------------------+
+                     |
+         [Only one process can pass at a time]
+                     |
+                     V
+        +-------------------------------------+
+        |         CRITICAL SECTION            |
+        |     (Accessing Shared Resource)     |
+        +-------------------------------------+
+                     |
+                     | sem_post()
+                     | (Release Lock)
+                     V
+                 (Continue Execution)
+                </code></pre>
+                <p>
+                    Illustrates two processes attempting to enter a critical section to access a shared resource. A semaphore (or mutex) controls access, ensuring only one process is in the critical section at a time.
+                </p>
+            </div>
+
+            <h4>Mutexes (Mutual Exclusion Locks)</h4>
+            <p>
+                A mutex is a synchronization primitive that grants exclusive access to a resource. It's essentially a binary semaphore with a specific ownership concept: only the process that locked the mutex can unlock it. Mutexes are primarily used to protect critical sections of code, ensuring that only one thread or process executes that section at any given time.
+            </p>
+            <ul>
+                <li>
+                    <strong>Lock (Acquire):</strong> A process attempts to acquire the mutex. If it's available, the process acquires it and continues. If it's locked by another process, the calling process blocks until the mutex is released.
+                </li>
+                <li>
+                    <strong>Unlock (Release):</strong> The process that holds the mutex releases it, making it available for other processes.
+                </li>
+            </ul>
+            <p>
+                Mutexes are often preferred over binary semaphores for mutual exclusion due to additional features they may offer, such as priority inheritance (to prevent priority inversion) and error checking.
+            </p>
+
+            <h3>6.5.2 Implementation Details</h3>
+            <p>
+                Semaphores and mutexes rely on atomic operations (e.g., test-and-set, compare-and-swap) at the hardware level to ensure that their core increment/decrement or lock/unlock operations are indivisible and free from race conditions. The OS kernel manages the semaphore/mutex state and the queues of processes/threads waiting for them.
+            </p>
+            <ul>
+                <li>
+                    <strong>Kernel Objects:</strong> Typically, semaphores and mutexes are kernel objects. When a process attempts to acquire a locked mutex or a semaphore with a value of zero, the kernel changes the process's state to "blocked" and places it in a waiting queue associated with that synchronization object.
+                </li>
+                <li>
+                    <strong>Context Switching:</strong> The scheduler then performs a context switch to another runnable process.
+                </li>
+                <li>
+                    <strong>Wake-up:</strong> When a semaphore is signaled or a mutex is unlocked, the kernel wakes up one (or more, for semaphores) of the waiting processes, changes its state to "ready," and places it back in the runnable queue.
+                </li>
+            </ul>
+
+            <h3>6.5.3 Semaphores and Mutexes in Different Operating Systems</h3>
+
+            <h4>Unix/Linux (System V IPC and POSIX IPC)</h4>
+            <p>
+                Unix-like systems offer both System V and POSIX APIs for semaphores. POSIX semaphores are generally preferred. Mutexes are primarily a POSIX Threads (Pthreads) concept, but can be used for process synchronization if they are allocated in shared memory.
+            </p>
+            <ul>
+                <li>
+                    <strong>System V Semaphores:</strong> More complex, involving sets of semaphores.
+                    <ul>
+                        <li><code><span class="code-function">semget</span>()</code>: Creates a semaphore set.</li>
+                        <li><code><span class="code-function">semop</span>()</code>: Performs operations on semaphores within a set (e.g., increment, decrement).</li>
+                        <li><code><span class="code-function">semctl</span>()</code>: Control operations.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>POSIX Semaphores:</strong> Simpler, can be named (for inter-process) or unnamed (for inter-thread).
+                    <ul>
+                        <li><code><span class="code-function">sem_open</span>()</code>: Creates/opens a named semaphore.</li>
+                        <li><code><span class="code-function">sem_wait</span>()</code>: Decrements the semaphore (P operation).</li>
+                        <li><code><span class="code-function">sem_post</span>()</code>: Increments the semaphore (V operation).</li>
+                        <li><code><span class="code-function">sem_close</span>()</code>, <code><span class="code-function">sem_unlink</span>()</code>: Close/remove semaphores.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>POSIX Mutexes (Pthreads):</strong> While primarily for threads, a <code><span class="code-type">pthread_mutex_t</span></code> can be used for inter-process synchronization if it's placed in shared memory and its attributes are set appropriately (e.g., <code><span class="code-type">PTHREAD_PROCESS_SHARED</span></code>).
+                    <ul>
+                        <li><code><span class="code-function">pthread_mutex_init</span>()</code>: Initialize mutex.</li>
+                        <li><code><span class="code-function">pthread_mutex_lock</span>()</code>: Acquire mutex.</li>
+                        <li><code><span class="code-function">pthread_mutex_unlock</span>()</code>: Release mutex.</li>
+                    </ul>
+                </li>
+            </ul>
+            <p>
+                <strong>Code Snippet: POSIX Semaphore Example (Linux) for Shared Memory Sync</strong>
+            </p>
+            <pre><code><span class="code-comment">// shared_memory_sync.c (Combines shared memory and semaphore)</span>
+<span class="code-comment">#include &lt;stdio.h&gt;</span>
+<span class="code-comment">#include &lt;stdlib.h&gt;</span>
+<span class="code-comment">#include &lt;string.h&gt;</span>
+<span class="code-comment">#include &lt;sys/mman.h&gt;</span>
+<span class="code-comment">#include &lt;sys/stat.h&gt;</span>
+<span class="code-comment">#include &lt;fcntl.h&gt;</span>
+<span class="code-comment">#include &lt;unistd.h_&gt;</span>
+<span class="code-comment">#include &lt;semaphore.h&gt;</span> <span class="code-comment">// For POSIX semaphores</span>
+
+<span class="code-keyword">const</span> <span class="code-type">char</span>* <span class="code-variable">SHM_NAME</span> = <span class="code-string">"/my_shm_sync"</span>;
+<span class="code-keyword">const</span> <span class="code-type">char</span>* <span class="code-variable">SEM_NAME</span> = <span class="code-string">"/my_sem_sync"</span>;
+<span class="code-keyword">const</span> <span class="code-type">int</span> <span class="code-variable">SHM_SIZE</span> = 1024;
+
+<span class="code-type">int</span> <span class="code-function">main</span>(<span class="code-type">int</span> <span class="code-variable">argc</span>, <span class="code-type">char</span>* <span class="code-variable">argv</span>[]) {
+    <span class="code-type">int</span> <span class="code-variable">fd</span>;
+    <span class="code-type">char</span>* <span class="code-variable">shm_ptr</span>;
+    <span class="code-type">sem_t</span>* <span class="code-variable">sem</span>;
+    <span class="code-type">int</span> <span class="code-variable">is_creator</span> = (<span class="code-variable">argc</span> > 1 &amp;&amp; <span class="code-function">strcmp</span>(<span class="code-variable">argv</span>[1], <span class="code-string">"creator"</span>) == 0);
+
+    <span class="code-comment">// Open/create shared memory</span>
+    <span class="code-variable">fd</span> = <span class="code-function">shm_open</span>(<span class="code-variable">SHM_NAME</span>, <span class="code-type">O_CREAT</span> | <span class="code-type">O_RDWR</span>, 0666);
+    <span class="code-keyword">if</span> (<span class="code-variable">fd</span> == -1) { <span class="code-function">perror</span>(<span class="code-string">"shm_open"</span>); <span class="code-function">exit</span>(EXIT_FAILURE); }
+    <span class="code-function">ftruncate</span>(<span class="code-variable">fd</span>, <span class="code-variable">SHM_SIZE</span>);
+    <span class="code-variable">shm_ptr</span> = <span class="code-function">mmap</span>(NULL, <span class="code-variable">SHM_SIZE</span>, <span class="code-type">PROT_READ</span> | <span class="code-type">PROT_WRITE</span>, <span class="code-type">MAP_SHARED</span>, <span class="code-variable">fd</span>, 0);
+    <span class="code-function">close</span>(<span class="code-variable">fd</span>); <span class="code-comment">// FD no longer needed after mmap</span>
+    <span class="code-keyword">if</span> (<span class="code-variable">shm_ptr</span> == <span class="code-type">MAP_FAILED</span>) { <span class="code-function">perror</span>(<span class="code-string">"mmap"</span>); <span class="code-function">exit</span>(EXIT_FAILURE); }
+
+    <span class="code-comment">// Open/create semaphore</span>
+    <span class="code-variable">sem</span> = <span class="code-function">sem_open</span>(<span class="code-variable">SEM_NAME</span>, <span class="code-type">O_CREAT</span>, 0666, 1); <span class="code-comment">// Initial value 1 (unlocked)</span>
+    <span class="code-keyword">if</span> (<span class="code-variable">sem</span> == <span class="code-type">SEM_FAILED</span>) { <span class="code-function">perror</span>(<span class="code-string">"sem_open"</span>); <span class="code-function">exit</span>(EXIT_FAILURE); }
+
+    <span class="code-keyword">if</span> (<span class="code-variable">is_creator</span>) {
+        <span class="code-function">printf</span>(<span class="code-string">"Creator: Waiting to write to shared memory...\n"</span>);
+        <span class="code-function">sem_wait</span>(<span class="code-variable">sem</span>); <span class="code-comment">// Acquire lock</span>
+        <span class="code-function">sprintf</span>(<span class="code-variable">shm_ptr</span>, <span class="code-string">"Data from creator process."</span>);
+        <span class="code-function">printf</span>(<span class="code-string">"Creator: Wrote '%s' to shared memory.\n"</span>, <span class="code-variable">shm_ptr</span>);
+        <span class="code-function">sem_post</span>(<span class="code-variable">sem</span>); <span class="code-comment">// Release lock</span>
+        <span class="code-function">printf</span>(<span class="code-string">"Creator: Press Enter to clean up...\n"</span>);
+        <span class="code-function">getchar</span>();
+    } <span class="code-keyword">else</span> {
+        <span class="code-function">printf</span>(<span class="code-string">"Reader: Waiting to read from shared memory...\n"</span>);
+        <span class="code-function">sem_wait</span>(<span class="code-variable">sem</span>); <span class="code-comment">// Acquire lock</span>
+        <span class="code-function">printf</span>(<span class="code-string">"Reader: Read from shared memory: '%s'\n"</span>, <span class="code-variable">shm_ptr</span>);
+        <span class="code-function">sem_post</span>(<span class="code-variable">sem</span>); <span class="code-comment">// Release lock</span>
+    }
+
+    <span class="code-comment">// Cleanup</span>
+    <span class="code-function">munmap</span>(<span class="code-variable">shm_ptr</span>, <span class="code-variable">SHM_SIZE</span>);
+    <span class="code-function">sem_close</span>(<span class="code-variable">sem</span>);
+    <span class="code-keyword">if</span> (<span class="code-variable">is_creator</span>) {
+        <span class="code-function">shm_unlink</span>(<span class="code-variable">SHM_NAME</span>);
+        <span class="code-function">sem_unlink</span>(<span class="code-variable">SEM_NAME</span>);
+    }
+    <span class="code-keyword">return</span> 0;
+}
+</code></pre>
+            <p>
+                Compile and run:
+                <pre><code><span class="code-function">gcc</span> shared_memory_sync.c -o shm_sync -lrt -pthread
+./shm_sync creator   <span class="code-comment">// In one terminal</span>
+./shm_sync           <span class="code-comment">// In another terminal, then press Enter in creator's terminal</span>
+                </code></pre>
+            </p>
+
+            <h4>Windows</h4>
+            <p>
+                Windows provides specific kernel objects for synchronization that can be shared between processes.
+            </p>
+            <ul>
+                <li>
+                    <strong>Mutexes:</strong>
+                    <ul>
+                        <li><code><span class="code-function">CreateMutex</span>()</code>: Creates or opens a named or unnamed mutex object.</li>
+                        <li><code><span class="code-function">OpenMutex</span>()</code>: Opens an existing named mutex.</li>
+                        <li><code><span class="code-function">WaitForSingleObject</span>()</code> / <code><span class="code-function">WaitForMultipleObjects</span>()</code>: Functions to acquire (wait for) the mutex. These functions block the calling thread until the specified object is signaled (e.g., mutex becomes available) or a timeout occurs.</li>
+                        <li><code><span class="code-function">ReleaseMutex</span>()</code>: Releases the mutex.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Semaphores:</strong>
+                    <ul>
+                        <li><code><span class="code-function">CreateSemaphore</span>()</code>: Creates or opens a named or unnamed counting semaphore object. You specify the initial count and maximum count.</li>
+                        <li><code><span class="code-function">OpenSemaphore</span>()</code>: Opens an existing named semaphore.</li>
+                        <li><code><span class="code-function">WaitForSingleObject</span>()</code> / <code><span class="code-function">WaitForMultipleObjects</span>()</code>: Used to decrement the semaphore count.</li>
+                        <li><code><span class="code-function">ReleaseSemaphore</span>()</code>: Increments the semaphore count.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Events:</strong> While not strictly semaphores or mutexes, event objects (<code><span class="code-function">CreateEvent</span>()</code>, <code><span class="code-function">SetEvent</span>()</code>, <code><span class="code-function">ResetEvent</span>()</code>) are also widely used for signaling and synchronization between processes.
+                </li>
+            </ul>
+
+            <h4>FreeRTOS (Real-time Operating System)</h4>
+            <p>
+                Synchronization is absolutely critical in FreeRTOS for managing shared resources between tasks. FreeRTOS provides efficient and lightweight semaphore and mutex implementations.
+            </p>
+            <ul>
+                <li>
+                    <strong>Binary Semaphores:</strong>
+                    <ul>
+                        <li><code><span class="code-function">xSemaphoreCreateBinary</span>()</code>: Creates a binary semaphore.</li>
+                        <li><code><span class="code-function">xSemaphoreTake</span>()</code>: Acquires the semaphore (P operation). Can specify a timeout.</li>
+                        <li><code><span class="code-function">xSemaphoreGive</span>()</code>: Releases the semaphore (V operation).</li>
+                        <li>Used for signaling (e.g., an ISR signals a task) or simple mutual exclusion.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Counting Semaphores:</strong>
+                    <ul>
+                        <li><code><span class="code-function">xSemaphoreCreateCounting</span>()</code>: Creates a counting semaphore with a specified maximum and initial count.</li>
+                        <li><code><span class="code-function">xSemaphoreTake</span>()</code>, <code><span class="code-function">xSemaphoreGive</span>()</code>: Same as for binary semaphores.</li>
+                        <li>Used for resource counting (e.g., number of buffers available).</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Mutexes (Recursive Mutexes):</strong>
+                    <ul>
+                        <li><code><span class="code-function">xSemaphoreCreateMutex</span>()</code>: Creates a mutex. FreeRTOS mutexes automatically include a priority inheritance mechanism, which is crucial for real-time systems to prevent priority inversion.</li>
+                        <li><code><span class="code-function">xSemaphoreTake</span>()</code>, <code><span class="code-function">xSemaphoreGive</span>()</code>: Same functions are used.</li>
+                        <li>Designed specifically for mutual exclusion where ownership is important and priority inversion is a concern.</li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+
+        <section id="sockets">
+            <h2>6.6 Sockets: Network-Transparent Communication</h2>
+            <h3>6.6.1 Core Concept and Working</h3>
+            <p>
+                Sockets provide a powerful and flexible mechanism for Interprocess Communication, particularly when processes need to communicate across network boundaries (i.e., on different machines) or when a client-server architecture is desired, even on the same machine. A socket acts as an endpoint for communication, typically identified by an IP address and a port number for network communication, or a file system path for local communication.
+            </p>
+            <p>
+                The communication model is fundamentally client-server: a server process creates a socket, binds it to a specific address/port, and listens for incoming connections. Client processes create their own sockets and attempt to connect to the server's address/port. Once a connection is established, data can flow bidirectionally between the client and server sockets.
+            </p>
+            <p>
+                Sockets abstract the underlying network protocols, allowing applications to communicate over TCP (stream sockets for reliable, ordered byte streams) or UDP (datagram sockets for unreliable, unordered message transfer).
+            </p>
+            <div class="diagram-placeholder">
+                <h4>Diagram 6.6: Client-Server Communication using Sockets</h4>
+                <pre><code>
++-------------------+           Network/IPC           +-------------------+
+|     Client        |          (via Sockets)          |      Server       |
+|     Process       |                                 |      Process      |
++-------------------+                                 +-------------------+
+        |                                                     |
+        | socket()                                            | socket()
+        | connect(Server_IP:Port)                             | bind(Server_IP:Port)
+        |                                                     | listen()
+        |                                                     |
+        |------------------- Connection Established ----------|
+        | send() &lt;-------------------------------------------&gt; recv()
+        | recv() &lt;-------------------------------------------&gt; send()
+        |                                                     |
+        +-------------------+                                 +-------------------+
+                </code></pre>
+                <p>
+                    Shows a Client Process establishing a connection with a Server Process via sockets. This can be local (Unix domain sockets) or across a network (Internet sockets).
+                </p>
+            </div>
+
+            <h3>6.6.2 Implementation Details</h3>
+            <p>
+                Socket implementation involves significant kernel support for network stack protocols (TCP/IP, UDP) and managing socket states (e.g., listening, connected).
+            </p>
+            <ul>
+                <li>
+                    <strong>Socket Creation:</strong> The <code><span class="code-function">socket</span>()</code> system call creates a socket, returning a file descriptor (on Unix) or a socket handle (on Windows). You specify the address family (e.g., AF_UNIX for local, AF_INET for IPv4), socket type (e.g., SOCK_STREAM for TCP, SOCK_DGRAM for UDP), and protocol.
+                </li>
+                <li>
+                    <strong>Binding:</strong> For server sockets, <code><span class="code-function">bind</span>()</code> associates the socket with a specific local address and port (or file path for Unix domain sockets).
+                </li>
+                <li>
+                    <strong>Listening:</strong> Server sockets use <code><span class="code-function">listen</span>()</code> to indicate readiness to accept incoming connections and define the backlog queue size.
+                </li>
+                <li>
+                    <strong>Accepting:</strong> <code><span class="code-function">accept</span>()</code> blocks the server until a client connects. It then creates a new socket for the accepted connection and returns its descriptor/handle.
+                </li>
+                <li>
+                    <strong>Connecting:</strong> Client sockets use <code><span class="code-function">connect</span>()</code> to initiate a connection to a server's address and port.
+                </li>
+                <li>
+                    <strong>Data Transfer:</strong> Once connected, <code><span class="code-function">send</span>()</code>, <code><span class="code-function">write</span>()</code>, <code><span class="code-function">recv</span>()</code>, <code><span class="code-function">read</span>()</code> are used to exchange data.
+                </li>
+                <li>
+                    <strong>Closing:</strong> <code><span class="code-function">close</span>()</code> or <code><span class="code-function">closesocket</span>()</code> terminates the socket connection.
+                </li>
+            </ul>
+
+            <h3>6.6.3 Sockets in Different Operating Systems</h3>
+
+            <h4>Unix/Linux</h4>
+            <p>
+                The Berkeley Sockets API is the standard for network programming and IPC using sockets.
+            </p>
+            <ul>
+                <li>
+                    <strong>Internet Sockets (<code><span class="code-type">AF_INET</span></code> / <code><span class="code-type">AF_INET6</span></code>):</strong> For communication over TCP/IP or UDP, whether local (loopback interface) or remote.
+                </li>
+                <li>
+                    <strong>Unix Domain Sockets (<code><span class="code-type">AF_UNIX</span></code> / <code><span class="code-type">AF_LOCAL</span></code>):</strong> Specifically designed for IPC between processes on the same machine. They are typically faster than Internet sockets for local communication because they bypass network overhead and often use file system paths for naming. They can also pass file descriptors between processes.
+                </li>
+            </ul>
+            <p>
+                <strong>Code Snippet: Basic Unix Domain Socket Example (Linux)</strong>
+            </p>
+            <pre><code><span class="code-comment">// uds_server.c</span>
+<span class="code-comment">#include &lt;stdio.h&gt;</span>
+<span class="code-comment">#include &lt;stdlib.h&gt;</span>
+<span class="code-comment">#include &lt;string.h&gt;</span>
+<span class="code-comment">#include &lt;unistd.h&gt;</span>
+<span class="code-comment">#include &lt;sys/socket.h&gt;</span>
+<span class="code-comment">#include &lt;sys/un.h&gt;</span> <span class="code-comment">// For sockaddr_un</span>
+
+<span class="code-keyword">const</span> <span class="code-type">char</span>* <span class="code-variable">SOCKET_PATH</span> = <span class="code-string">"/tmp/my_uds_socket"</span>;
+
+<span class="code-type">int</span> <span class="code-function">main</span>() {
+    <span class="code-type">int</span> <span class="code-variable">server_fd</span>, <span class="code-variable">client_fd</span>;
+    <span class="code-type">struct</span> <span class="code-type">sockaddr_un</span> <span class="code-variable">addr</span>;
+    <span class="code-type">char</span> <span class="code-variable">buffer</span>[256];
+
+    <span class="code-comment">// Create socket</span>
+    <span class="code-variable">server_fd</span> = <span class="code-function">socket</span>(<span class="code-type">AF_UNIX</span>, <span class="code-type">SOCK_STREAM</span>, 0);
+    <span class="code-keyword">if</span> (<span class="code-variable">server_fd</span> == -1) { <span class="code-function">perror</span>(<span class="code-string">"socket"</span>); <span class="code-function">exit</span>(EXIT_FAILURE); }
+
+    <span class="code-comment">// Remove old socket file if it exists</span>
+    <span class="code-function">unlink</span>(<span class="code-variable">SOCKET_PATH</span>);
+
+    <span class="code-comment">// Bind socket to a file path</span>
+    <span class="code-function">memset</span>(&<span class="code-variable">addr</span>, 0, <span class="code-keyword">sizeof</span>(<span class="code-variable">addr</span>));
+    <span class="code-variable">addr</span>.<span class="code-variable">sun_family</span> = <span class="code-type">AF_UNIX</span>;
+    <span class="code-function">strncpy</span>(<span class="code-variable">addr</span>.<span class="code-variable">sun_path</span>, <span class="code-variable">SOCKET_PATH</span>, <span class="code-keyword">sizeof</span>(<span class="code-variable">addr</span>.<span class="code-variable">sun_path</span>) - 1);
+    
+    <span class="code-keyword">if</span> (<span class="code-function">bind</span>(<span class="code-variable">server_fd</span>, (<span class="code-type">struct</span> <span class="code-type">sockaddr</span>*)&<span class="code-variable">addr</span>, <span class="code-keyword">sizeof</span>(<span class="code-type">struct</span> <span class="code-type">sockaddr_un</span>)) == -1) {
+        <span class="code-function">perror</span>(<span class="code-string">"bind"</span>);
+        <span class="code-function">exit</span>(EXIT_FAILURE);
+    }
+
+    <span class="code-comment">// Listen for incoming connections</span>
+    <span class="code-keyword">if</span> (<span class="code-function">listen</span>(<span class="code-variable">server_fd</span>, 5) == -1) { <span class="code-function">perror</span>(<span class="code-string">"listen"</span>); <span class="code-function">exit</span>(EXIT_FAILURE); }
+    <span class="code-function">printf</span>(<span class="code-string">"Server: Listening on %s\n"</span>, <span class="code-variable">SOCKET_PATH</span>);
+
+    <span class="code-comment">// Accept a connection</span>
+    <span class="code-variable">client_fd</span> = <span class="code-function">accept</span>(<span class="code-variable">server_fd</span>, NULL, NULL);
+    <span class="code-keyword">if</span> (<span class="code-variable">client_fd</span> == -1) { <span class="code-function">perror</span>(<span class="code-string">"accept"</span>); <span class="code-function">exit</span>(EXIT_FAILURE); }
+    <span class="code-function">printf</span>(<span class="code-string">"Server: Client connected.\n"</span>);
+
+    <span class="code-comment">// Read from client</span>
+    <span class="code-type">ssize_t</span> <span class="code-variable">bytes_read</span> = <span class="code-function">read</span>(<span class="code-variable">client_fd</span>, <span class="code-variable">buffer</span>, <span class="code-keyword">sizeof</span>(<span class="code-variable">buffer</span>) - 1);
+    <span class="code-keyword">if</span> (<span class="code-variable">bytes_read</span> > 0) {
+        <span class="code-variable">buffer</span>[<span class="code-variable">bytes_read</span>] = <span class="code-string">'\0'</span>;
+        <span class="code-function">printf</span>(<span class="code-string">"Server: Received '%s'\n"</span>, <span class="code-variable">buffer</span>);
+        <span class="code-function">write</span>(<span class="code-variable">client_fd</span>, <span class="code-string">"Server got your message!"</span>, 24);
+    }
+
+    <span class="code-function">close</span>(<span class="code-variable">client_fd</span>);
+    <span class="code-function">close</span>(<span class="code-variable">server_fd</span>);
+    <span class="code-function">unlink</span>(<span class="code-variable">SOCKET_PATH</span>);
+    <span class="code-keyword">return</span> 0;
+}
+</code></pre>
+            <pre><code><span class="code-comment">// uds_client.c</span>
+<span class="code-comment">#include &lt;stdio.h&gt;</span>
+<span class="code-comment">#include &lt;stdlib.h&gt;</span>
+<span class="code-comment">#include &lt;string.h&gt;</span>
+<span class="code-comment">#include &lt;unistd.h&gt;</span>
+<span class="code-comment">#include &lt;sys/socket.h&gt;</span>
+<span class="code-comment">#include &lt;sys/un.h&gt;</span>
+
+<span class="code-keyword">const</span> <span class="code-type">char</span>* <span class="code-variable">SOCKET_PATH</span> = <span class="code-string">"/tmp/my_uds_socket"</span>;
+
+<span class="code-type">int</span> <span class="code-function">main</span>() {
+    <span class="code-type">int</span> <span class="code-variable">client_fd</span>;
+    <span class="code-type">struct</span> <span class="code-type">sockaddr_un</span> <span class="code-variable">addr</span>;
+    <span class="code-type">char</span> <span class="code-variable">buffer</span>[256];
+    <span class="code-keyword">const</span> <span class="code-type">char</span>* <span class="code-variable">message</span> = <span class="code-string">"Hello from client!"</span>;
+
+    <span class="code-comment">// Create socket</span>
+    <span class="code-variable">client_fd</span> = <span class="code-function">socket</span>(<span class="code-type">AF_UNIX</span>, <span class="code-type">SOCK_STREAM</span>, 0);
+    <span class="code-keyword">if</span> (<span class="code-variable">client_fd</span> == -1) { <span class="code-function">perror</span>(<span class="code-string">"socket"</span>); <span class="code-function">exit</span>(EXIT_FAILURE); }
+
+    <span class="code-comment">// Connect to server socket</span>
+    <span class="code-function">memset</span>(&<span class="code-variable">addr</span>, 0, <span class="code-keyword">sizeof</span>(<span class="code-variable">addr</span>));
+    <span class="code-variable">addr</span>.<span class="code-variable">sun_family</span> = <span class="code-type">AF_UNIX</span>;
+    <span class="code-function">strncpy</span>(<span class="code-variable">addr</span>.<span class="code-variable">sun_path</span>, <span class="code-variable">SOCKET_PATH</span>, <span class="code-keyword">sizeof</span>(<span class="code-variable">addr</span>.<span class="code-variable">sun_path</span>) - 1);
+
+    <span class="code-keyword">if</span> (<span class="code-function">connect</span>(<span class="code-variable">client_fd</span>, (<span class="code-type">struct</span> <span class="code-type">sockaddr</span>*)&<span class="code-variable">addr</span>, <span class="code-keyword">sizeof</span>(<span class="code-type">struct</span> <span class="code-type">sockaddr_un</span>)) == -1) {
+        <span class="code-function">perror</span>(<span class="code-string">"connect"</span>);
+        <span class="code-function">exit</span>(EXIT_FAILURE);
+    }
+    <span class="code-function">printf</span>(<span class="code-string">"Client: Connected to server.\n"</span>);
+
+    <span class="code-comment">// Write to server</span>
+    <span class="code-function">write</span>(<span class="code-variable">client_fd</span>, <span class="code-variable">message</span>, <span class="code-function">strlen</span>(<span class="code-variable">message</span>));
+    <span class="code-function">printf</span>(<span class="code-string">"Client: Sent '%s'\n"</span>, <span class="code-variable">message</span>);
+
+    <span class="code-comment">// Read response from server</span>
+    <span class="code-type">ssize_t</span> <span class="code-variable">bytes_read</span> = <span class="code-function">read</span>(<span class="code-variable">client_fd</span>, <span class="code-variable">buffer</span>, <span class="code-keyword">sizeof</span>(<span class="code-variable">buffer</span>) - 1);
+    <span class="code-keyword">if</span> (<span class="code-variable">bytes_read</span> > 0) {
+        <span class="code-variable">buffer</span>[<span class="code-variable">bytes_read</span>] = <span class="code-string">'\0'</span>;
+        <span class="code-function">printf</span>(<span class="code-string">"Client: Received response: '%s'\n"</span>, <span class="code-variable">buffer</span>);
+    }
+
+    <span class="code-function">close</span>(<span class="code-variable">client_fd</span>);
+    <span class="code-keyword">return</span> 0;
+}
+</code></pre>
+            <p>
+                Compile and run:
+                <pre><code><span class="code-function">gcc</span> uds_server.c -o uds_server
+<span class="code-function">gcc</span> uds_client.c -o uds_client
+./uds_server   <span class="code-comment">// In one terminal</span>
+./uds_client   <span class="code-comment">// In another terminal</span>
+                </code></pre>
+            </p>
+
+            <h4>Windows</h4>
+            <p>
+                Windows implements sockets through the Winsock API (Windows Sockets), which is largely compatible with the Berkeley Sockets API, making porting network applications relatively straightforward.
+            </p>
+            <ul>
+                <li>
+                    Key Winsock functions typically start with <code><span class="code-function">WSA</span></code> (e.g., <code><span class="code-function">WSAStartup</span>()</code> to initialize Winsock).
+                </li>
+                <li>
+                    Function names are similar to Unix (e.g., <code><span class="code-function">socket</span>()</code>, <code><span class="code-function">bind</span>()</code>, <code><span class="code-function">listen</span>()</code>, <code><span class="code-function">accept</span>()</code>, <code><span class="code-function">connect</span>()</code>, <code><span class="code-function">send</span>()</code>, <code><span class="code-function">recv</span>()</code>).
+                </li>
+                <li>
+                    Windows also supports "named pipes" which, despite their name, are more akin to connection-oriented sockets than traditional Unix pipes, providing a robust byte-stream or message-stream IPC mechanism for local processes.
+                </li>
+            </ul>
+
+            <h4>FreeRTOS (Real-time Operating System)</h4>
+            <p>
+                FreeRTOS itself does not natively provide a full-fledged network stack or socket API as part of its kernel. However, it is common to integrate lightweight TCP/IP stacks, such as FreeRTOS+TCP or LwIP.
+            </p>
+            <ul>
+                <li>
+                    When a TCP/IP stack is integrated, it typically exposes a socket-like API (e.g., `FreeRTOS_socket`, `FreeRTOS_bind`, `FreeRTOS_send`, `FreeRTOS_recv`).
+                </li>
+                <li>
+                    These are primarily used for network communication to other devices (e.g., controlling a device over Ethernet) rather than inter-task communication on the same MCU.
+                </li>
+                <li>
+                    For inter-task communication within the RTOS, simpler and more efficient mechanisms like queues and stream buffers are generally preferred over the overhead of a full socket implementation.
+                </li>
+            </ul>
+        </section>
+
+        <section id="signals">
+            <h2>6.7 Signals: Asynchronous Event Notification</h2>
+            <h3>6.7.1 Core Concept and Working</h3>
+            <p>
+                Signals are a lightweight mechanism for notifying a process of an event. Unlike the other IPC methods discussed, signals are not designed for transferring data. Their primary purpose is asynchronous notification and handling of specific events, such as:
+            </p>
+            <ul>
+                <li>Termination requests (e.g., <code><span class="code-type">SIGTERM</span></code>, <code><span class="code-type">SIGKILL</span></code>)</li>
+                <li>Program errors (e.g., <code><span class="code-type">SIGSEGV</span></code> for segmentation fault, <code><span class="code-type">SIGFPE</span></code> for floating-point exception)</li>
+                <li>Timer expiration (<code><span class="code-type">SIGALRM</span></code>)</li>
+                <li>User-generated events (e.g., <code><span class="code-type">SIGINT</span></code> from Ctrl+C)</li>
+                <li>Child process status changes (<code><span class="code-type">SIGCHLD</span></code>)</li>
+            </ul>
+            <p>
+                When a signal is sent to a process, the kernel interrupts the process's normal flow of execution (if it's running) and forces it to handle the signal. A process can either:
+            </p>
+            <ul>
+                <li><strong>Catch the signal:</strong> Execute a specified signal handler function.</li>
+                <li><strong>Ignore the signal:</strong> Some signals (like <code><span class="code-type">SIGKILL</span></code>) cannot be ignored.</li>
+                <li><strong>Perform default action:</strong> The OS defines a default action, often process termination.</li>
+            </ul>
+            <p>
+                Signals are inherently unreliable for complex data transfer and should generally be used for simple event notification. The order of delivery is not guaranteed, and signal handlers must be carefully written to avoid re-entrancy issues and to be "async-signal-safe."
+            </p>
+
+            <h3>6.7.2 Implementation Details</h3>
+            <p>
+                Signals are implemented within the kernel. When a signal is generated (by another process, the kernel itself, or hardware), the kernel marks the target process as having a pending signal.
+            </p>
+            <ul>
+                <li>
+                    <strong>Signal Mask:</strong> Each process has a signal mask that determines which signals are currently blocked from delivery. Blocked signals remain pending until unblocked.
+                </li>
+                <li>
+                    <strong>Signal Handler:</strong> When a process is scheduled and has unblocked, pending signals, the kernel interrupts its execution. If a custom handler is registered, the process's context is saved, and the signal handler function is invoked. After the handler returns, the original context is restored, and the process resumes.
+                </li>
+                <li>
+                    <strong>Default Actions:</strong> If no custom handler is registered, the kernel performs the default action (e.g., terminate, core dump, ignore).
+                </li>
+            </ul>
+
+            <h3>6.7.3 Signals in Different Operating Systems</h3>
+
+            <h4>Unix/Linux</h4>
+            <p>
+                Signals are a fundamental part of Unix/Linux.
+            </p>
+            <ul>
+                <li><code><span class="code-function">kill</span>()</code>: Sends a signal to a process or process group.</li>
+                <li><code><span class="code-function">signal</span>()</code> (older) / <code><span class="code-function">sigaction</span>()</code> (POSIX, preferred): Registers a signal handler function for a specific signal. <code><span class="code-function">sigaction</span>()</code> provides more control over signal semantics (e.g., blocking other signals during handler execution).</li>
+                <li><code><span class="code-function">raise</span>()</code>: Sends a signal to the calling process.</li>
+                <li><code><span class="code-function">sigprocmask</span>()</code>: Examines or changes the signal mask.</li>
+            </ul>
+
+            <h4>Windows</h4>
+            <p>
+                Windows does not have a direct equivalent of Unix signals. It uses different mechanisms for event notification and error handling:
+            </p>
+            <ul>
+                <li>
+                    <strong>Event Objects:</strong> As mentioned previously, Windows Event objects (<code><span class="code-function">CreateEvent</span>()</code>, <code><span class="code-function">SetEvent</span>()</code>, <code><span class="code-function">ResetEvent</span>()</code>, <code><span class="code-function">WaitForSingleObject</span>()</code>) are the primary mechanism for asynchronous notification between processes or threads.
+                </li>
+                <li>
+                    <strong>Structured Exception Handling (SEH):</strong> For handling program errors like segmentation faults, Windows uses SEH.
+                </li>
+                <li>
+                    <strong>Console Control Handlers:</strong> For handling Ctrl+C (<code><span class="code-type">CTRL_C_EVENT</span></code>) and similar console events, Windows provides <code><span class="code-function">SetConsoleCtrlHandler</span>()</code>.
+                </li>
+            </ul>
+
+            <h4>FreeRTOS (Real-time Operating System)</h4>
+            <p>
+                FreeRTOS tasks do not use "signals" in the Unix sense. Instead, tasks communicate events using:
+            </p>
+            <ul>
+                <li>
+                    <strong>Queues:</strong> Small messages or event structures can be sent via queues.
+                </li>
+                <li>
+                    <strong>Semaphores (Binary):</strong> An ISR or another task can "give" a binary semaphore, unblocking a task that is "taking" it, effectively signaling an event.
+                </li>
+                <li>
+                    <strong>Event Groups:</strong> FreeRTOS Event Groups provide a powerful mechanism for tasks to synchronize with multiple events. A task can wait for one or more bits to be set within an event group, and other tasks/ISRs can set these bits.
+                    <ul>
+                        <li><code><span class="code-function">xEventGroupCreate</span>()</code>: Creates an event group.</li>
+                        <li><code><span class="code-function">xEventGroupSetBits</span>()</code>: Sets bits within an event group (used by sender).</li>
+                        <li><code><span class="code-function">xEventGroupWaitBits</span>()</code>: Blocks a task until specific bits are set (used by receiver).</li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+
+        <section id="other-ipc">
+            <h2>6.8 Other Advanced and Higher-Level IPC Mechanisms</h2>
+            <p>
+                While the mechanisms discussed so far form the bedrock of IPC, modern operating systems and distributed computing environments often provide higher-level abstractions built upon these primitives.
+            </p>
+            <ul>
+                <li>
+                    <strong>Remote Procedure Call (RPC):</strong>
+                    <p>
+                        RPC allows a program to cause a procedure (subroutine) to execute in another address space (commonly on a remote computer) as if it were a local procedure call. The underlying IPC might use sockets or other network transports. Examples include Sun RPC (now ONC RPC), Microsoft RPC, and gRPC.
+                    </p>
+                </li>
+                <li>
+                    <strong>Message Passing Interface (MPI):</strong>
+                    <p>
+                        Primarily used in high-performance computing (HPC) for parallel programming on distributed memory systems. MPI provides a standard library for message-passing communication, allowing processes to send and receive data explicitly, often over a network.
+                    </p>
+                </li>
+                <li>
+                    <strong>D-Bus (Linux):</strong>
+                    <p>
+                        A high-level message bus system used for inter-process communication in Linux and other Unix-like systems. It's often used for system-wide communication (system bus) or desktop applications (session bus) to allow them to communicate with each other and with the operating system. It provides a structured way to send messages, call methods, and emit signals.
+                    </p>
+                </li>
+                <li>
+                    <strong>COM/DCOM (Windows):</strong>
+                    <p>
+                        Component Object Model (COM) and Distributed COM (DCOM) are Microsoft technologies for interprocess communication and object-oriented programming. They allow software components to communicate, even if they are in different processes or on different machines.
+                    </p>
+                </li>
+            </ul>
+        </section>
+
+        <section id="conclusion">
+            <h2>6.9 Conclusion: Choosing the Right IPC Mechanism</h2>
+            <p>
+                Interprocess communication is a vital component of any robust operating system, enabling diverse processes to cooperate, share resources, and synchronize activities. We've explored a range of fundamental IPC mechanisms, from the raw speed of shared memory to the structured nature of message queues, the simplicity of pipes, the critical role of semaphores and mutexes for synchronization, and the network-transparent capabilities of sockets.
+            </p>
+            <p>
+                The choice of IPC mechanism depends heavily on the specific requirements of the application:
+            </p>
+            <ul>
+                <li>
+                    <strong>Shared Memory:</strong> Best for high-throughput data transfer where speed is paramount, but requires careful external synchronization.
+                </li>
+                <li>
+                    <strong>Message Queues:</strong> Ideal for asynchronous, structured communication, providing decoupling and built-in buffering. Good for exchanging small, discrete messages.
+                </li>
+                <li>
+                    <strong>Pipes:</strong> Simple and efficient for unidirectional byte-stream communication, especially between related processes (unnamed pipes) or for simple command piping (named pipes).
+                </li>
+                <li>
+                    <strong>Semaphores/Mutexes:</strong> Essential for protecting shared resources and coordinating access, not for data transfer itself.
+                </li>
+                <li>
+                    <strong>Sockets:</strong> The most versatile for client-server communication, capable of local or network-wide data exchange, supporting various communication patterns.
+                </li>
+                <li>
+                    <strong>Signals:</strong> Limited to simple asynchronous event notification, not for data.
+                </li>
+            </ul>
+            <p>
+                Real-world applications often combine multiple IPC mechanisms to achieve their goals. For instance, a system might use shared memory for large data blocks but employ a message queue or a semaphore to signal when the shared data is ready for consumption. Understanding the underlying implementation details and the trade-offs of each mechanism is crucial for designing efficient, reliable, and scalable multi-process applications.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 My Operating System Book. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const body = document.body;
+
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                darkModeToggle.checked = true;
+            }
+
+            darkModeToggle.addEventListener('change', () => {
+                if (darkModeToggle.checked) {
+                    body.classList.add('dark-mode');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    body.classList.remove('dark-mode');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
