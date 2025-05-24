@@ -1,0 +1,1 @@
+These are my notes hosted at https://kvp1703.github.io/notes/
