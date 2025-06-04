@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Process Synchronization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        :root {
+            --primary-color: #3F51B5; /* Indigo */
+            --primary-dark-color: #303F9F; /* Dark Indigo */
+            --primary-light-color: #C5CAE9; /* Light Indigo */
+            --accent-color: #E91E63; /* Pink */
+            
+            /* Light Theme Specific */
+            --text-color: #212121;
+            --text-secondary-color: #757575;
+            --background-color: #ECEFF1; /* Blue Grey Lighten-5 */
+            --card-background-color: rgba(255, 255, 255, 0.92);
+            --code-bg-inline: #e8eaf6;
+            --code-text-inline: var(--primary-dark-color); /* For inline code text in light mode */
+            --code-bg-block: #263238; /* Blue Grey Darken-4 for code blocks */
+            --code-text-block: #EEFFFF; /* Light cyan for code text */
+            --table-header-bg: var(--primary-light-color);
+            --table-header-text: var(--primary-dark-color);
+            --table-cell-bg: rgba(255,255,255,0.7);
+            --table-border-color: #B0BEC5;
+            --note-bg: #E1F5FE;
+            --note-border: #03A9F4;
+            --warning-bg: #FFF8E1;
+            --warning-border: #FFC107;
+            --link-color: var(--primary-color);
+            --link-hover-color: var(--accent-color);
+            --app-bar-bg: var(--primary-dark-color);
+            --app-bar-text: white;
+            --body-gradient-start: #e3f2fd;
+            --body-gradient-end: #e8eaf6;
+            --scrollbar-track-bg: var(--background-color);
+            --scrollbar-thumb-bg: var(--primary-light-color);
+            --scrollbar-thumb-hover-bg: var(--primary-color);
+            --toggle-btn-bg: var(--primary-light-color);
+            --toggle-btn-text: var(--primary-dark-color);
+            --toggle-btn-hover-bg: #9fa8da;
+        }
+
+        body.dark-mode {
+            --primary-color: #7986CB; /* Indigo Lighten-2 */
+            --primary-dark-color: #5C6BC0; /* Indigo Lighten-1 */
+            --primary-light-color: #3949AB; /* Indigo Darken-1 */
+            --accent-color: #F06292; /* Pink Lighten-1 */
+
+            --text-color: #E0E0E0; /* Grey Lighten-2 */
+            --text-secondary-color: #BDBDBD; /* Grey Lighten-1 */
+            --background-color: #212121; /* Almost Black */
+            --card-background-color: rgba(48, 48, 48, 0.95); /* Dark Grey with transparency */
+            --code-bg-inline: #37474F; /* Blue Grey Darken-2 */
+            --code-text-inline: #B0BEC5; /* Blue Grey Lighten-2 for inline code text in dark mode */
+            --code-bg-block: #1E1E1E; /* Very Dark Grey for code blocks */
+            --code-text-block: #D4D4D4; /* Lighter grey for code text */
+            --table-header-bg: var(--primary-light-color); /* Darker Indigo */
+            --table-header-text: #E8EAF6; /* Light Indigo */
+            --table-cell-bg: rgba(66,66,66,0.8); /* Darker grey cell */
+            --table-border-color: #424242; /* Darker border */
+            --note-bg: #263238; /* Blue Grey Darken-3 */
+            --note-border: #4FC3F7; /* Light Blue Lighten-1 */
+            --warning-bg: #3E2723; /* Brown Darken-4 */
+            --warning-border: #FFB300; /* Amber Darken-1 */
+            --link-color: var(--primary-color);
+            --link-hover-color: var(--accent-color);
+            --app-bar-bg: #1A1A1A; /* Darker App Bar */
+            --app-bar-text: #E0E0E0;
+            --body-gradient-start: #2C2C2C;
+            --body-gradient-end: #1E1E1E;
+            --scrollbar-track-bg: #2C2C2C;
+            --scrollbar-thumb-bg: var(--primary-light-color);
+            --scrollbar-thumb-hover-bg: var(--primary-color);
+            --toggle-btn-bg: var(--primary-light-color);
+            --toggle-btn-text: var(--background-color); /* Dark text on light button */
+            --toggle-btn-hover-bg: #5c6bc0; /* Indigo Lighten-1 for hover */
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+            background-image: linear-gradient(135deg, var(--body-gradient-start) 0%, var(--body-gradient-end) 100%);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Custom Scrollbar */
+        body::-webkit-scrollbar {
+            width: 10px;
+        }
+        body::-webkit-scrollbar-track {
+            background: var(--scrollbar-track-bg);
+        }
+        body::-webkit-scrollbar-thumb {
+            background-color: var(--scrollbar-thumb-bg);
+            border-radius: 10px;
+            border: 2px solid var(--scrollbar-track-bg); 
+        }
+        body::-webkit-scrollbar-thumb:hover {
+            background-color: var(--scrollbar-thumb-hover-bg);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 15px;
+        }
+        
+        .app-bar {
+            background-color: var(--app-bar-bg);
+            color: var(--app-bar-text);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+            margin-bottom: 30px;
+            border-radius: 0 0 8px 8px;
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+        }
+        /* Spacer for app-bar title centering */
+        .app-bar::before, .app-bar::after {
+            content: "";
+            flex-basis: 70px; /* Adjust this to match button width + desired spacing */
+            flex-shrink: 0;
+        }
+        .app-bar::after { /* Ensure the right spacer balances the left if button is on right */
+            order: 2; /* Make sure it's after the button if button is order 1 */
+        }
+
+
+        .app-bar h1 {
+            margin: 0; 
+            font-weight: 500;
+            font-size: 2.2em;
+            flex-grow: 1; /* Allow title to take available space */
+            text-align: center; /* Center text within its allocated space */
+        }
+        
+        #theme-toggle-btn {
+            background-color: transparent;
+            color: var(--app-bar-text);
+            border: 1px solid var(--app-bar-text); 
+            padding: 8px 12px;
+            border-radius: 20px; 
+            cursor: pointer;
+            font-size: 1em; 
+            transition: background-color 0.3s, color 0.3s, transform 0.2s;
+            outline: none; 
+            order: 1; /* To place it after the ::before pseudo-element and before h1 if needed, or control with flex order*/
+            flex-shrink: 0; /* Prevent button from shrinking */
+            margin-left: 10px; /* Add some space if needed, or use justify-content: flex-end on a wrapper */
+        }
+
+
+        #theme-toggle-btn:hover {
+            background-color: var(--app-bar-text);
+            color: var(--app-bar-bg);
+            transform: scale(1.05); 
+        }
+        #theme-toggle-btn:active {
+            transform: scale(0.95); 
+        }
+
+
+        .toc-card {
+            background-color: var(--card-background-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.08);
+            margin-bottom: 35px;
+            padding: 25px 30px;
+            border-left: 5px solid var(--accent-color);
+        }
+
+        .toc-card h2 {
+            color: var(--primary-dark-color);
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 1.6em;
+            border-bottom: 1px solid var(--primary-light-color);
+            padding-bottom: 10px;
+        }
+        
+        .toc-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .toc-list > li {
+            margin-bottom: 12px;
+        }
+
+        .toc-list li a {
+            text-decoration: none;
+            color: var(--link-color);
+            transition: color 0.3s ease;
+            display: inline-block;
+            padding: 2px 0;
+        }
+        
+        .toc-list > li > a {
+            font-weight: 500;
+            font-size: 1.05em;
+        }
+
+        .toc-list li a:hover, .toc-list li a:focus {
+            color: var(--link-hover-color);
+            text-decoration: underline;
+        }
+
+        .toc-list .toc-h3 {
+            padding-left: 15px;
+            margin-top: 5px;
+        }
+        
+        .toc-list .toc-h3 li {
+            margin-bottom: 6px;
+        }
+
+        .toc-list .toc-h3 li a {
+            font-weight: 400;
+            font-size: 0.95em;
+            color: var(--text-secondary-color);
+        }
+        
+        .toc-list .toc-h3 li a::before {
+            content: "› ";
+            color: var(--accent-color);
+            margin-right: 5px;
+            font-weight: bold;
+        }
+
+        .card {
+            background-color: var(--card-background-color);
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            padding: 25px 30px;
+            overflow: hidden;
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .card h2, .card h3, .card h4 {
+            font-weight: 500;
+        }
+
+        .card h2 {
+            color: var(--primary-dark-color);
+            border-bottom: 2px solid var(--primary-light-color);
+            padding-bottom: 12px;
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+
+        .card h3 {
+            color: var(--primary-color);
+            margin-top: 25px;
+            font-size: 1.5em;
+        }
+
+        .card h4 {
+            color: var(--primary-dark-color);
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        body.dark-mode .card h4 { 
+            color: var(--primary-color);
+        }
+
+
+        p {
+            margin-bottom: 1em;
+            text-align: justify;
+            color: var(--text-color);
+        }
+
+        ul, ol {
+            margin-bottom: 1em;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 0.5em;
+        }
+
+        code { 
+            font-family: 'Roboto Mono', monospace;
+            background-color: var(--code-bg-inline);
+            color: var(--code-text-inline);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .note code, .warning code, table code {
+            background-color: var(--code-bg-inline); 
+            color: var(--code-text-inline);
+        }
+        body.dark-mode .note code, 
+        body.dark-mode .warning code, 
+        body.dark-mode table code {
+             background-color: #4A555C; 
+             color: #B2DFDB; 
+        }
+        
+        .code-block-container {
+            margin: 15px 0;
+        }
+
+        .toggle-code-btn {
+            background-color: var(--toggle-btn-bg);
+            color: var(--toggle-btn-text);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            display: block;
+            outline: none;
+        }
+
+        .toggle-code-btn:hover {
+            background-color: var(--toggle-btn-hover-bg);
+        }
+
+        pre {
+            background-color: var(--code-bg-block);
+            color: var(--code-text-block);
+            padding: 20px;
+            border-radius: 0 0 6px 6px;
+            overflow-x: auto;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-top: 0;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, padding 0.4s ease-in-out;
+            border: 1px solid var(--primary-light-color);
+            border-top: none;
+        }
+        body.dark-mode pre {
+             border: 1px solid var(--primary-dark-color); 
+        }
+        
+        pre.show {
+            max-height: 1000px;
+            opacity: 1;
+            padding: 20px;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            color: inherit;
+            font-weight: normal;
+        }
+        
+        .keyword { color: #FF80AB; } 
+        .type { color: #80CBC4; }    
+        .comment { color: #90A4AE; font-style: italic; } 
+        .literal { color: #FFB74D; } 
+        .function { color: #64B5F6; } 
+        .variable { color: #EF9A9A; } 
+        body.dark-mode .keyword { color: #F48FB1; } 
+        body.dark-mode .type { color: #4DB6AC; }    
+        body.dark-mode .comment { color: #78909C; } 
+        body.dark-mode .literal { color: #FFCC80; } 
+        body.dark-mode .function { color: #4FC3F7; } 
+        body.dark-mode .variable { color: #E57373; } 
+
+
+        .note {
+            background-color: var(--note-bg);
+            border-left: 5px solid var(--note-border);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning {
+            background-color: var(--warning-bg);
+            border-left: 5px solid var(--warning-border);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        th, td {
+            border: 1px solid var(--table-border-color);
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
+            font-weight: 500;
+        }
+        
+        td {
+            background-color: var(--table-cell-bg);
+        }
+
+        strong {
+            font-weight: 500;
+            color: var(--primary-dark-color);
+        }
+        body.dark-mode strong {
+            color: var(--primary-color);
+        }
+
+        .centered-text {
+            text-align: center;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-bar">
+        <!-- Empty pseudo-elements will act as spacers if defined in CSS -->
+        <h1>Chapter 5: Process Synchronization</h1>
+        <button id="theme-toggle-btn">🌓</button>
+    </div>
+
+    <div class="container">
+
+        <div class="toc-card" id="toc">
+            <h2>Quick Navigation</h2>
+            <ul class="toc-list">
+                <li><a href="#intro-sync">Introduction to Process Synchronization</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#what-is-sync">What is Process Synchronization?</a></li>
+                        <li><a href="#why-sync-needed">Why is Synchronization Needed?</a></li>
+                        <li><a href="#coop-vs-indep">Cooperating vs. Independent Processes</a></li>
+                        <li><a href="#comp-vs-coop-sync">Competitive vs. Cooperative Synchronization</a></li>
+                    </ul>
+                </li>
+                <li><a href="#critical-section-problem">The Critical Section Problem</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#def-cs">Defining the Critical Section</a></li>
+                        <li><a href="#race-conditions">Race Conditions</a></li>
+                        <li><a href="#req-cs-solution">Requirements for a Valid Solution</a></li>
+                    </ul>
+                </li>
+                <li><a href="#sync-mechanisms-overview">Synchronization Mechanisms: An Overview</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#busy-waiting">Busy-Waiting (Spinlocks)</a></li>
+                        <li><a href="#non-busy-waiting">Non-Busy Waiting / Blocking</a></li>
+                    </ul>
+                </li>
+                <li><a href="#software-busy-waiting">Software-based Busy-Waiting Solutions</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#simple-lock">Attempt 1: Simple Lock Variable</a></li>
+                        <li><a href="#strict-alternation">Attempt 2: Strict Alternation</a></li>
+                        <li><a href="#petersons-solution">Peterson's Solution (for 2 Processes)</a></li>
+                    </ul>
+                </li>
+                <li><a href="#hardware-busy-waiting">Hardware-Assisted Busy-Waiting Solutions</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#disabling-interrupts">Disabling Interrupts</a></li>
+                        <li><a href="#tsl-instruction">Test-and-Set Lock (TSL) Instruction</a></li>
+                        <li><a href="#atomic-swap">Atomic Swap (or Exchange) Instruction</a></li>
+                    </ul>
+                </li>
+                <li><a href="#blocking-sync-primitives">Blocking Synchronization Primitives</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#semaphores">Semaphores</a></li>
+                        <li><a href="#mutex-locks">Mutex Locks</a></li>
+                    </ul>
+                </li>
+                <li><a href="#classical-sync-problems">Classical Synchronization Problems</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#producer-consumer">The Producer-Consumer Problem</a></li>
+                        <li><a href="#readers-writers">The Readers-Writers Problem</a></li>
+                        <li><a href="#dining-philosophers">The Dining Philosophers Problem</a></li>
+                    </ul>
+                </li>
+                <li><a href="#advanced-sync-constructs">Advanced Synchronization Constructs</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#monitors">Monitors</a></li>
+                        <li><a href="#condition-variables">Condition Variables</a></li>
+                    </ul>
+                </li>
+                <li><a href="#common-sync-challenges">Common Synchronization Challenges</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#deadlock">Deadlock</a></li>
+                        <li><a href="#starvation">Starvation</a></li>
+                        <li><a href="#livelock">Livelock</a></li>
+                        <li><a href="#priority-inversion">Priority Inversion</a></li>
+                    </ul>
+                </li>
+                <li><a href="#related-concepts">Related Concepts</a>
+                    <ul class="toc-list toc-h3">
+                        <li><a href="#concurrency-vs-parallelism">Concurrency vs. Parallelism</a></li>
+                        <li><a href="#thread-safety">Thread Safety</a></li>
+                        <li><a href="#ipc-and-sync">Inter-Process Communication (IPC)</a></li>
+                        <li><a href="#data-integrity">Data Integrity</a></li>
+                    </ul>
+                </li>
+                 <li><a href="#summary-sync-techniques">Summary of Synchronization Techniques</a></li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2 id="intro-sync">Introduction to Process Synchronization</h2>
+            <p>In a multi-programming environment, multiple processes often run concurrently, and they might share data or resources. Process synchronization is the mechanism to manage the execution of these cooperating processes to ensure orderly access to shared resources and maintain data consistency. Without proper synchronization, concurrent access can lead to unpredictable outcomes and errors.</p>
+
+            <h3 id="what-is-sync">What is Process Synchronization?</h3>
+            <p><strong>Process Synchronization</strong> refers to the coordination of multiple processes (or threads) that are executing concurrently and potentially accessing shared data or resources. The primary goal is to control the sequence of their execution to prevent conflicts and ensure that the outcome of their concurrent operations is correct and predictable, as if they were executed in some sequential order.</p>
+
+            <h3 id="why-sync-needed">Why is Process Synchronization Needed?</h3>
+            <p>Synchronization is crucial for several reasons:</p>
+            <ul>
+                <li><strong>Data Consistency:</strong> When multiple processes access and manipulate shared data concurrently, the final state of the data might depend on the precise order of execution. This can lead to inconsistent data if accesses are not managed.</li>
+                <li><strong>Preventing Race Conditions:</strong> A race condition occurs when the outcome of a computation depends on the non-deterministic timing or interleaving of operations by multiple processes. Synchronization helps prevent such scenarios.</li>
+                <li><strong>Orderly Resource Sharing:</strong> Shared resources like printers, files, or memory segments need to be accessed in a controlled manner (e.g., one process at a time for exclusive resources).</li>
+            </ul>
+
+            <h3 id="coop-vs-indep">Cooperating Processes vs. Independent Processes</h3>
+            <p>Processes can be categorized based on their interaction:</p>
+            <ul>
+                <li><strong>Independent Processes:</strong> An independent process is one whose execution does not affect and is not affected by other processes executing in the system. They do not share any data (temporary or persistent) with other processes.</li>
+                <li><strong>Cooperating Processes:</strong> A cooperating process is one that can affect or be affected by other processes executing in the system. These processes typically share data, either through shared memory, message passing, or common files. Cooperation is essential for information sharing, computation speedup (by dividing tasks), modularity, and convenience.</li>
+            </ul>
+            <p>Process synchronization is primarily concerned with managing the interactions of <strong>cooperating processes</strong>.</p>
+
+            <h3 id="comp-vs-coop-sync">Competitive vs. Cooperative Synchronization</h3>
+            <p>Synchronization needs can arise from two main scenarios:</p>
+            <ul>
+                <li><strong>Competitive Synchronization:</strong> This occurs when multiple processes compete for exclusive access to a shared resource. For example, two processes trying to print to the same printer. The main goal here is to ensure mutual exclusion – only one process uses the resource at any given time.</li>
+                <li><strong>Cooperative Synchronization:</strong> This occurs when processes need to work together to achieve a common goal. For instance, one process (a producer) might generate data that another process (a consumer) uses. They need to synchronize their actions (e.g., the consumer waits if no data is available, the producer waits if the buffer is full).</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2 id="critical-section-problem">The Critical Section Problem</h2>
+            <p>A fundamental challenge in concurrent programming is managing access to shared resources. The part of a program where a shared resource is accessed is known as the critical section.</p>
+
+            <h3 id="def-cs">Defining the Critical Section</h3>
+            <p>A <strong>Critical Section (CS)</strong> is a segment of code in a process where shared resources (like common variables, data structures, files, etc.) are accessed and potentially modified. It's "critical" because if multiple processes execute their respective critical sections concurrently, it can lead to data corruption or inconsistent state due to uncoordinated modifications.</p>
+            <p>The general structure of a process involving a critical section is:</p>
+            <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="keyword">do</span> {
+    <span class="comment">// Entry Section: Code to request permission to enter CS</span>
+    
+    <span class="comment">// --- CRITICAL SECTION ---</span>
+    <span class="comment">// Access shared resources</span>
+    <span class="comment">// --- END CRITICAL SECTION ---</span>
+    
+    <span class="comment">// Exit Section: Code to release CS</span>
+    
+    <span class="comment">// Remainder Section: Other non-critical code</span>
+} <span class="keyword">while</span> (<span class="literal">true</span>);</code></pre>
+            </div>
+
+            <h3 id="race-conditions">Race Conditions</h3>
+            <p>A <strong>Race Condition</strong> is an undesirable situation that occurs when a device or system attempts to perform two or more operations at the same time, but because of the nature of the device or system, the operations must be done in the proper sequence to be done correctly. In the context of processes, it occurs when multiple processes access and manipulate shared data concurrently, and the final outcome depends on the particular order in which their instructions are interleaved by the scheduler.</p>
+            
+            <h4>Example of a Race Condition:</h4>
+            <p>Consider two processes, P1 and P2, both trying to increment a shared counter variable, <code>count</code>, initialized to 5.</p>
+            <p>The high-level instruction <code>count++</code> might translate to the following machine instructions:</p>
+            <ol>
+                <li><code>LOAD R, count</code> (Load the value of <code>count</code> into a register R)</li>
+                <li><code>INCREMENT R</code> (Increment the register R)</li>
+                <li><code>STORE R, count</code> (Store the new value from R back to <code>count</code>)</li>
+            </ol>
+            <p>If P1 and P2 execute concurrently, their instructions might interleave like this:</p>
+            <table class="race-condition-table">
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>P1 Instruction</th>
+                        <th>P2 Instruction</th>
+                        <th>Register P1 (R1)</th>
+                        <th>Register P2 (R2)</th>
+                        <th><code>count</code> Value</th>
+                        <th>Comment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td><code>LOAD R1, count</code></td><td></td><td>5</td><td>-</td><td>5</td><td>P1 loads count (5)</td></tr>
+                    <tr><td>2</td><td></td><td><code>LOAD R2, count</code></td><td>5</td><td>5</td><td>5</td><td>P2 loads count (5) before P1 updates it</td></tr>
+                    <tr><td>3</td><td><code>INCREMENT R1</code></td><td></td><td>6</td><td>5</td><td>5</td><td>P1 increments its local copy</td></tr>
+                    <tr><td>4</td><td></td><td><code>INCREMENT R2</code></td><td>6</td><td>6</td><td>5</td><td>P2 increments its local copy</td></tr>
+                    <tr><td>5</td><td><code>STORE R1, count</code></td><td></td><td>6</td><td>6</td><td>6</td><td>P1 stores its result (6)</td></tr>
+                    <tr><td>6</td><td></td><td><code>STORE R2, count</code></td><td>6</td><td>6</td><td>6</td><td>P2 stores its result (6), overwriting P1's update.</td></tr>
+                </tbody>
+            </table>
+            <p><strong>Expected Result:</strong> <code>count</code> should be 7 (5 + 1 + 1).<br>
+            <strong>Actual Result (due to race condition):</strong> <code>count</code> is 6.</p>
+            <p>This demonstrates how unsynchronized access to shared data can lead to incorrect results. The critical section is the code segment <code>count++</code>.</p>
+
+            <h3 id="req-cs-solution">Requirements for a Valid Solution to the Critical Section Problem</h3>
+            <p>Any solution to the critical section problem must satisfy the following three fundamental requirements:</p>
+            <ol>
+                <li>
+                    <strong>Mutual Exclusion (M.E.):</strong>
+                    <p>If a process is executing in its critical section, then no other process can be executing in its critical section for the same shared resource. This is the primary goal – to prevent simultaneous access.</p>
+                </li>
+                <li>
+                    <strong>Progress:</strong>
+                    <p>If no process is executing in its critical section and some processes wish to enter their critical sections, then only those processes that are not executing in their remainder sections can participate in the decision of which will enter its critical section next. Furthermore, this selection cannot be postponed indefinitely. This means:</p>
+                    <ul>
+                        <li>If the critical section is free, and at least one process wants to enter, one process must be allowed to enter.</li>
+                        <li>The decision of who enters next cannot be blocked by processes that are not interested in entering the critical section.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Bounded Waiting (No Starvation / Fairness):</strong>
+                    <p>There must exist a bound on the number of times that other processes are allowed to enter their critical sections after a process has made a request to enter its critical section and before that request is granted. This ensures that no process waits indefinitely to enter its critical section (i.e., it prevents starvation).</p>
+                </li>
+            </ol>
+            <p>Additionally, a good solution should be efficient and, if possible, work for any number of processes, not just two.</p>
+        </div>
+
+        <div class="card">
+            <h2 id="sync-mechanisms-overview">Synchronization Mechanisms: An Overview</h2>
+            <p>Solutions to the critical section problem can be broadly categorized based on how a process waits when it cannot enter its critical section:</p>
+
+            <h3 id="busy-waiting">1. Busy-Waiting (Spinlocks)</h3>
+            <p>In busy-waiting solutions, when a process attempts to enter its critical section but finds it occupied, it continuously executes a loop, repeatedly checking if the critical section has become available. This "spinning" consumes CPU cycles without doing productive work. These are also known as <strong>spinlocks</strong>.</p>
+            <ul>
+                <li><strong>Pros:</strong> Low latency in acquiring the lock once it's free, as no context switch is involved. Useful for short critical sections where the wait time is expected to be minimal.</li>
+                <li><strong>Cons:</strong> Wastes CPU cycles, especially if the critical section is held for a long time or on a single-processor system (where the waiting process prevents the process holding the lock from running and releasing it). Can lead to priority inversion problems if a low-priority process holds the lock and a high-priority process is spinning.</li>
+            </ul>
+
+            <h3 id="non-busy-waiting">2. Non-Busy Waiting / Blocking (Sleep & Wakeup)</h3>
+            <p>In blocking solutions, when a process cannot enter its critical section, it is moved from the <code>Running</code> state to a <code>Waiting</code> (or <code>Blocked</code>) state by the operating system. It yields the CPU, allowing other processes to run. When the critical section becomes free, the blocked process is woken up (moved to the <code>Ready</code> state) and can eventually re-enter the <code>Running</code> state to attempt entry again.</p>
+            <ul>
+                <li><strong>Pros:</strong> Avoids wasting CPU cycles. Generally better for longer critical sections or when contention is high.</li>
+                <li><strong>Cons:</strong> Involves the overhead of context switching (saving and restoring process state), which can be more time-consuming than a short spin if the lock is released very quickly.</li>
+            </ul>
+            <p>Primitives like semaphores and monitors typically use blocking.</p>
+        </div>
+
+        <div class="card">
+            <h2 id="software-busy-waiting">Software-based Busy-Waiting Solutions</h2>
+            <p>These solutions rely purely on software algorithms and shared variables, without special hardware instructions. They are often complex to design correctly and typically work for a limited number of processes.</p>
+
+            <h3 id="simple-lock">Attempt 1: Simple Lock Variable (Naive Approach)</h3>
+            <p>One of the simplest ideas is to use a shared <code>lock</code> variable.</p>
+            <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="comment">// Shared variable</span>
+<span class="type">boolean</span> lock = <span class="literal">false</span>; <span class="comment">// false means free, true means busy</span>
+
+<span class="comment">// Process Pi</span>
+<span class="keyword">do</span> {
+    <span class="keyword">while</span> (lock == <span class="literal">true</span>) {
+        <span class="comment">// busy wait</span>
+    }
+    lock = <span class="literal">true</span>; <span class="comment">// Acquire lock</span>
+    
+    <span class="comment">// --- CRITICAL SECTION ---</span>
+    
+    lock = <span class="literal">false</span>; <span class="comment">// Release lock</span>
+    
+    <span class="comment">// --- REMAINDER SECTION ---</span>
+} <span class="keyword">while</span> (<span class="literal">true</span>);</code></pre>
+            </div>
+            <h4>Analysis:</h4>
+            <ul>
+                <li><strong>Mutual Exclusion: No.</strong> This solution can violate mutual exclusion. Consider this scenario:
+                    <ol>
+                        <li>Process P0 sees <code>lock</code> is <code>false</code>.</li>
+                        <li>Before P0 can set <code>lock</code> to <code>true</code>, it's preempted.</li>
+                        <li>Process P1 runs, sees <code>lock</code> is <code>false</code>, sets <code>lock</code> to <code>true</code>, and enters CS.</li>
+                        <li>Process P0 resumes, also sets <code>lock</code> to <code>true</code> (it had already passed the <code>while</code> condition), and enters CS.</li>
+                    </ol>
+                    Both P0 and P1 are in the critical section simultaneously. The check (<code>while (lock == true)</code>) and the acquisition (<code>lock = true;</code>) are not atomic.
+                </li>
+                <li><strong>Progress: Yes (conditionally).</strong> If ME were guaranteed, and the CS is free, a process wanting to enter could. However, with ME failure, progress is ill-defined.</li>
+                <li><strong>Bounded Waiting: No.</strong> If multiple processes are waiting, there's no guarantee which one will get the lock next.</li>
+                <li><strong>Busy Waiting: Yes.</strong> Processes spin in the <code>while</code> loop.</li>
+            </ul>
+            <div class="note">
+                <p>This simple lock variable approach highlights the core problem: the need for <strong>atomicity</strong>. Checking the lock and setting it must be an indivisible operation.</p>
+            </div>
+
+            <h3 id="strict-alternation">Attempt 2: Strict Alternation (Turn Variable)</h3>
+            <p>This approach uses a shared <code>turn</code> variable to ensure that two processes take turns entering their critical sections.</p>
+            <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="comment">// Shared variable</span>
+<span class="type">int</span> turn = 0; <span class="comment">// Initially, process 0 can enter</span>
+
+<span class="comment">// Process Pi (where i is 0 or 1)</span>
+<span class="keyword">do</span> {
+    <span class="keyword">while</span> (turn != i) {
+        <span class="comment">// busy wait - wait for its turn</span>
+    }
+    
+    <span class="comment">// --- CRITICAL SECTION ---</span>
+    
+    turn = 1 - i; <span class="comment">// Pass the turn to the other process</span>
+    
+    <span class="comment">// --- REMAINDER SECTION ---</span>
+} <span class="keyword">while</span> (<span class="literal">true</span>);</code></pre>
+            </div>
+            <h4>Analysis:</h4>
+            <ul>
+                <li><strong>Mutual Exclusion: Yes.</strong> Only one process can have <code>turn == i</code> at any time.</li>
+                <li><strong>Progress: No.</strong> This solution enforces strict alternation. If P0 wants to enter CS again but P1 is in its remainder section, P0 must wait.</li>
+                <li><strong>Bounded Waiting: Yes (trivially).</strong> A process waits for at most one entry by the other process.</li>
+                <li><strong>Busy Waiting: Yes.</strong></li>
+                <li><strong>Process Limit:</strong> Only works for <strong>two processes</strong>.</li>
+            </ul>
+
+            <h3 id="petersons-solution">Peterson's Solution (for 2 Processes)</h3>
+            <p>Peterson's solution is a classic software-based solution that combines the ideas of a turn variable and flag variables to satisfy all three critical section requirements for two processes.</p>
+            <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="comment">// Shared variables:</span>
+<span class="type">boolean</span> flag[2]; <span class="comment">// Indicate if a process wants to enter the critical section. Initially false.</span>
+<span class="type">int</span> turn;     <span class="comment">// Indicates whose turn it is.</span>
+
+<span class="comment">// Initialization:</span>
+flag[0] = <span class="literal">false</span>;
+flag[1] = <span class="literal">false</span>;
+<span class="comment">// turn can be initialized to 0 or 1. Let's say 0.</span>
+turn = 0; 
+
+<span class="keyword">void</span> <span class="function">process_i_peterson</span>(<span class="type">int</span> i) { <span class="comment">// i is the process ID (0 or 1)</span>
+    <span class="type">int</span> j = 1 - i; <span class="comment">// The other process ID</span>
+
+    <span class="keyword">while</span> (<span class="literal">true</span>) { 
+        flag[i] = <span class="literal">true</span>;     <span class="comment">// Indicate desire to enter critical section</span>
+        turn = j;           <span class="comment">// Give priority to the other process (j) if contention</span>
+        
+        <span class="comment">// Wait if Pj also wants to enter AND it's Pj's turn</span>
+        <span class="keyword">while</span> (flag[j] && turn == j) { 
+            <span class="comment">// Busy wait</span>
+        }
+
+        <span class="comment">// --- CRITICAL SECTION ---</span>
+        <span class="comment">// System.out.println("Process " + i + " is in Critical Section (Peterson)");</span>
+        <span class="comment">// --- END CRITICAL SECTION ---</span>
+
+        flag[i] = <span class="literal">false</span>;    <span class="comment">// Indicate exit from critical section</span>
+        
+        <span class="comment">// --- REMAINDER SECTION ---</span>
+    }
+}</code></pre>
+            </div>
+            <h4>Analysis:</h4>
+            <ul>
+                <li><strong>Mutual Exclusion: Yes.</strong>
+                    A process <code>Pi</code> enters its CS only if either <code>flag[j]</code> is <code>false</code> (Pj doesn't want to enter) or <code>turn == i</code> (it's Pi's turn).
+                </li>
+                <li><strong>Progress: Yes.</strong>
+                    If Pj is not interested (<code>flag[j]</code> is <code>false</code>), Pi can enter. If both are interested, one will eventually enter.
+                </li>
+                <li><strong>Bounded Waiting: Yes.</strong>
+                    Pi waits for at most one entry by Pj.
+                </li>
+                <li><strong>Busy Waiting: Yes.</strong> The <code>while (flag[j] && turn == j)</code> loop is a busy-wait loop.</li>
+                <li><strong>Process Limit:</strong> Works for <strong>two processes</strong>.</li>
+            </ul>
+            <div class="note">
+                <p>The key to Peterson's solution is that a process indicates its interest (<code>flag[i] = true</code>) <strong>before</strong> setting the <code>turn</code> variable. By setting <code>turn = j</code>, process <code>i</code> politely gives way to process <code>j</code> if <code>j</code> is also interested. If <code>j</code> is not interested (<code>flag[j] == false</code>), <code>i</code> proceeds. If <code>j</code> is interested, <code>i</code> waits only if it's <code>j</code>'s turn. </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 id="hardware-busy-waiting">Hardware-Assisted Busy-Waiting Solutions</h2>
+            <p>Modern computer architectures provide special atomic instructions that can simplify the implementation of critical sections.</p>
+
+            <h3 id="disabling-interrupts">Disabling Interrupts</h3>
+            <p>On a single-processor system, disabling interrupts before CS and re-enabling after can ensure ME.</p>
+            <ul>
+                <li><strong>Cons:</strong> Not for user-level; inefficient on multi-processors; impacts system responsiveness. Used by OS kernel for very short CS.</li>
+            </ul>
+
+            <h3 id="tsl-instruction">Test-and-Set Lock (TSL) Instruction</h3>
+            <p>The <code>TestAndSet()</code> instruction atomically reads a boolean lock, sets it to <code>true</code>, and returns the <em>original</em> value.</p>
+             <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="comment">// Shared variable:</span>
+<span class="type">boolean</span> lock_tsl = <span class="literal">false</span>; 
+
+<span class="comment">// Atomic Test and Set Lock function (hardware-dependent)</span>
+<span class="type">boolean</span> <span class="function">TestAndSet</span>(<span class="type">boolean</span> *target) {
+    <span class="type">boolean</span> oldValue = *target;
+    *target = <span class="literal">true</span>; 
+    <span class="keyword">return</span> oldValue; 
+}
+
+<span class="keyword">void</span> <span class="function">process_using_tsl</span>() {
+    <span class="keyword">while</span> (<span class="literal">true</span>) {
+        <span class="keyword">while</span> (<span class="function">TestAndSet</span>(&lock_tsl)) {
+            <span class="comment">// Busy wait</span>
+        }
+        <span class="comment">// --- CRITICAL SECTION ---</span>
+        lock_tsl = <span class="literal">false</span>; 
+        <span class="comment">// --- REMAINDER SECTION ---</span>
+    }
+}</code></pre>
+            </div>
+            <h4>Analysis:</h4>
+            <ul>
+                <li><strong>Mutual Exclusion: Yes.</strong></li>
+                <li><strong>Progress: Yes.</strong></li>
+                <li><strong>Bounded Waiting: No (simple form).</strong></li>
+                <li><strong>Busy Waiting: Yes.</strong></li>
+                <li><strong>Process Limit:</strong> N processes.</li>
+            </ul>
+            <div class="note">
+                <p><strong>Bus Locking for Atomicity:</strong> Hardware often uses bus locking to ensure <code>TestAndSet()</code> is atomic across multiple processors.</p>
+            </div>
+
+            <h3 id="atomic-swap">Atomic Swap (or Exchange) Instruction</h3>
+            <p>The <code>AtomicSwap()</code> instruction atomically swaps the contents of two memory locations.</p>
+            <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="comment">// Shared variable:</span>
+<span class="type">int</span> lock_swap_var = 0; <span class="comment">// 0 means unlocked, 1 means locked</span>
+
+<span class="comment">// Atomic Swap function (hardware, simplified conceptual implementation)</span>
+<span class="keyword">void</span> <span class="function">atomic_swap_int</span>(<span class="type">int</span> *val1, <span class="type">int</span> *val2) {
+    <span class="comment">// This operation must be atomic by hardware.</span>
+    <span class="type">int</span> temp = *val1; *val1 = *val2; *val2 = temp;
+}
+
+<span class="keyword">void</span> <span class="function">process_using_swap</span>() {
+    <span class="type">int</span> local_key;
+    <span class="keyword">while</span> (<span class="literal">true</span>) {
+        local_key = 1; 
+        <span class="keyword">do</span> {
+            <span class="function">atomic_swap_int</span>(&local_key, &lock_swap_var); 
+        } <span class="keyword">while</span> (local_key != 0); 
+        <span class="comment">// --- CRITICAL SECTION ---</span>
+        lock_swap_var = 0; 
+        <span class="comment">// --- REMAINDER SECTION ---</span>
+    }
+}</code></pre>
+            </div>
+            <h4>Analysis:</h4>
+            <ul>
+                <li><strong>Mutual Exclusion: Yes.</strong></li>
+                <li><strong>Progress: Yes.</strong></li>
+                <li><strong>Bounded Waiting: No (simple form).</strong></li>
+                <li><strong>Busy Waiting: Yes.</strong></li>
+                <li><strong>Process Limit:</strong> N processes.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2 id="blocking-sync-primitives">Blocking Synchronization Primitives</h2>
+            <p>These primitives allow a waiting process to sleep, yielding the CPU.</p>
+
+            <h3 id="semaphores">Semaphores</h3>
+            <p>A <strong>Semaphore</strong> is an integer variable accessed via atomic <code>wait()</code> (P) and <code>signal()</code> (V) operations.</p>
+            <h4>Core Concept and Operations (Conceptual with Blocking):</h4>
+            <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="keyword">typedef struct</span> {
+    <span class="type">int</span> value;
+    <span class="comment">// Queue<Process> waiting_queue; // Pseudo-code for waiting queue</span>
+} <span class="type">Semaphore</span>;
+
+<span class="keyword">void</span> <span class="function">wait_sem</span>(<span class="type">Semaphore</span> *S) { <span class="comment">// Renamed to avoid conflict with HTML wait</span>
+    S->value--;
+    <span class="keyword">if</span> (S->value < 0) {
+        <span class="comment">// add current process to S->waiting_queue;</span>
+        <span class="comment">// block(); // Suspend the process</span>
+    }
+}
+
+<span class="keyword">void</span> <span class="function">signal_sem</span>(<span class="type">Semaphore</span> *S) { <span class="comment">// Renamed</span>
+    S->value++;
+    <span class="keyword">if</span> (S->value <= 0) { 
+        <span class="comment">// remove a process P from S->waiting_queue;</span>
+        <span class="comment">// wakeup(P); // Move P to the ready queue</span>
+    }
+}</code></pre>
+            </div>
+            <h4>Types of Semaphores:</h4>
+            <h5>1. Counting Semaphore:</h5>
+            <ul>
+                <li>Value can range over an unrestricted domain.</li>
+                <li><strong>Use Cases:</strong> Controlling access to N identical resources (init S to N), signaling events.</li>
+                <li><strong>Mutual Exclusion:</strong> Only if S is initialized to 1. If <code>S > 1</code>, ME for a single CS is violated.</li>
+            </ul>
+            <h5>2. Binary Semaphore (Mutex):</h5>
+            <ul>
+                <li>Value is 0 or 1. Acts like a lock.</li>
+                <li><strong>Use Case:</strong> Mutual exclusion.
+                <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="type">Semaphore</span> mutex_sem_example = { .value = 1 }; <span class="comment">// Initialize to 1</span>
+<span class="keyword">do</span> {
+    <span class="function">wait_sem</span>(&mutex_sem_example);
+    <span class="comment">// --- CRITICAL SECTION ---</span>
+    <span class="function">signal_sem</span>(&mutex_sem_example);
+    <span class="comment">// --- REMAINDER SECTION ---</span>
+} <span class="keyword">while</span> (<span class="literal">true</span>);</code></pre></div>
+                </li>
+            </ul>
+
+            <h3 id="mutex-locks">Mutex Locks</h3>
+            <p>A <strong>Mutex (Mutual Exclusion) Lock</strong> is specifically for enforcing ME.</p>
+            <h4>Key Characteristics:</h4>
+            <ul>
+                <li><strong>States:</strong> Locked/Unlocked.</li>
+                <li><strong>Operations:</strong> <code>lock()</code> (acquire), <code>unlock()</code> (release).</li>
+                <li><strong>Ownership:</strong> Typically, only the thread that locked it can unlock it.</li>
+            </ul>
+            <h4>Mutex vs. Semaphore:</h4>
+            <table class="comparison-table">
+                <thead><tr><th>Feature</th><th>Mutex</th><th>Semaphore</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Purpose</strong></td><td>Mutual Exclusion</td><td>ME, Resource Counting, Signaling</td></tr>
+                    <tr><td><strong>Ownership</strong></td><td>Often yes</td><td>Generally no</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card">
+            <h2 id="classical-sync-problems">Classical Synchronization Problems</h2>
+
+            <h3 id="producer-consumer">1. The Producer-Consumer (Bounded Buffer) Problem</h3>
+            <p>Producers add items to a shared buffer, consumers remove them. Buffer has finite size.</p>
+            <h4>Solution using Semaphores:</h4>
+             <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="comment">// Assume N is buffer_size</span>
+<span class="comment">// Semaphore mutex_pc = { .value = 1 };</span>
+<span class="comment">// Semaphore emptySlots_pc = { .value = N };</span>
+<span class="comment">// Semaphore fullSlots_pc = { .value = 0 };</span>
+
+<span class="comment">// Producer Process:</span>
+<span class="keyword">while</span> (<span class="literal">true</span>) {
+    <span class="comment">// item = produce_item();</span>
+    <span class="function">wait_sem</span>(&emptySlots_pc);     
+    <span class="function">wait_sem</span>(&mutex_pc);          
+    <span class="comment">// add_item_to_buffer(item);</span>
+    <span class="function">signal_sem</span>(&mutex_pc);        
+    <span class="function">signal_sem</span>(&fullSlots_pc);      
+}
+
+<span class="comment">// Consumer Process:</span>
+<span class="keyword">while</span> (<span class="literal">true</span>) {
+    <span class="function">wait_sem</span>(&fullSlots_pc);        
+    <span class="function">wait_sem</span>(&mutex_pc);          
+    <span class="comment">// item = remove_item_from_buffer();</span>
+    <span class="function">signal_sem</span>(&mutex_pc);        
+    <span class="function">signal_sem</span>(&emptySlots_pc);     
+    <span class="comment">// consume_item(item);</span>
+}</code></pre>
+            </div>
+            <div class="warning">
+                <p><strong>Order of <code>wait_sem()</code> operations is CRUCIAL:</strong> In Producer, <code>wait_sem(emptySlots_pc)</code> then <code>wait_sem(mutex_pc)</code>. Reverse order risks deadlock if buffer is full. Similarly for Consumer.</p>
+            </div>
+
+            <h3 id="readers-writers">2. The Readers-Writers Problem</h3>
+            <p>Shared resource: Readers can access concurrently; Writers need exclusive access.</p>
+            <h4>First Readers-Writers Problem (Readers' Priority):</h4>
+             <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="comment">// Semaphore db_access_rw = { .value = 1 }; </span>
+<span class="comment">// Semaphore mutex_reader_count_rw = { .value = 1 }; </span>
+<span class="type">int</span> reader_count_rw = 0;    
+
+<span class="comment">// Reader Process:</span>
+<span class="keyword">while</span> (<span class="literal">true</span>) {
+    <span class="function">wait_sem</span>(&mutex_reader_count_rw);
+    reader_count_rw++;
+    <span class="keyword">if</span> (reader_count_rw == 1) { <span class="function">wait_sem</span>(&db_access_rw); } 
+    <span class="function">signal_sem</span>(&mutex_reader_count_rw);
+
+    <span class="comment">// <read database></span>
+
+    <span class="function">wait_sem</span>(&mutex_reader_count_rw);
+    reader_count_rw--;
+    <span class="keyword">if</span> (reader_count_rw == 0) { <span class="function">signal_sem</span>(&db_access_rw); } 
+    <span class="function">signal_sem</span>(&mutex_reader_count_rw);
+}
+
+<span class="comment">// Writer Process:</span>
+<span class="keyword">while</span> (<span class="literal">true</span>) {
+    <span class="function">wait_sem</span>(&db_access_rw);      
+    <span class="comment">// <write to database></span>
+    <span class="function">signal_sem</span>(&db_access_rw);
+}</code></pre>
+            </div>
+            <h4>Analysis (Readers' Priority):</h4>
+            <ul>
+                <li><strong>Bounded Waiting: Not guaranteed for writers (Writer Starvation).</strong></li>
+            </ul>
+             <div class="note">
+                <p>The shared integer <code>reader_count_rw</code> is protected by its own mutex because incrementing/decrementing and checking its value must be atomic with respect to other readers.</p>
+            </div>
+
+            <h3 id="dining-philosophers">3. The Dining Philosophers Problem</h3>
+            <p>Five philosophers, five chopsticks. Each needs two to eat. Illustrates deadlock and starvation.</p>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Dining_philosophers.png/300px-Dining_philosophers.png" alt="Dining Philosophers" style="display: block; margin: 20px auto; max-width: 300px;">
+            <h4>Naive Solution (Deadlock-Prone):</h4>
+             <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="type">int</span> N_PHIL = 5;
+<span class="comment">// Semaphore chopsticks_dp[N_PHIL]; // Initialized to 1 each</span>
+
+<span class="keyword">void</span> <span class="function">philosopher_dp</span>(<span class="type">int</span> i) {
+    <span class="keyword">while</span> (<span class="literal">true</span>) {
+        <span class="comment">// think()</span>
+        <span class="function">wait_sem</span>(&chopsticks_dp[i]);             
+        <span class="function">wait_sem</span>(&chopsticks_dp[(i + 1) % N_PHIL]); 
+        <span class="comment">// eat()</span>
+        <span class="function">signal_sem</span>(&chopsticks_dp[i]);
+        <span class="function">signal_sem</span>(&chopsticks_dp[(i + 1) % N_PHIL]);
+    }
+}</code></pre>
+            </div>
+            <h4>Deadlock Prevention Strategies:</h4>
+            <ol>
+                <li>Limit concurrent diners to N-1.</li>
+                <li>Asymmetric solution (one philosopher picks right then left).</li>
+                <li>Acquire both chopsticks atomically.</li>
+            </ol>
+        </div>
+        
+        <div class="card">
+            <h2 id="advanced-sync-constructs">Advanced Synchronization Constructs</h2>
+            
+            <h3 id="monitors">Monitors</h3>
+            <p>A <strong>Monitor</strong> is a high-level ADT encapsulating shared data and procedures operating on it. Only one process can be active within a monitor at a time (implicit mutual exclusion).</p>
+            
+            <h3 id="condition-variables">Condition Variables</h3>
+            <p>Used within monitors for processes to wait for specific conditions. Operations:</p>
+            <ul>
+                <li><code>wait_cond(c)</code>: Suspends process, releases monitor lock. (Renamed)</li>
+                <li><code>signal_cond(c)</code>: Resumes one waiting process (if any). (Renamed)</li>
+            </ul>
+            <h4>Example: Producer-Consumer with Monitors (Conceptual)</h4>
+             <div class="code-block-container">
+                <button class="toggle-code-btn">Show Code</button>
+                <pre><code><span class="keyword">monitor</span> BoundedBufferMonitor {
+    <span class="comment">// Buffer buffer_mon; int count_mon = 0; int BUFFER_SIZE_MON;</span>
+    <span class="comment">// Condition notFull_mon, notEmpty_mon;</span>
+
+    <span class="keyword">procedure</span> <span class="function">produce_mon</span>(<span class="type">Item</span> item) {
+        <span class="keyword">if</span> (count_mon == BUFFER_SIZE_MON) { <span class="function">notFull_mon.wait_cond</span>(); }
+        <span class="comment">// add_item_to_buffer(item); count_mon++;</span>
+        <span class="function">notEmpty_mon.signal_cond</span>();
+    }
+    <span class="keyword">procedure</span> <span class="type">Item</span> <span class="function">consume_mon</span>() {
+        <span class="keyword">if</span> (count_mon == 0) { <span class="function">notEmpty_mon.wait_cond</span>(); }
+        <span class="comment">// Item item = remove_item_from_buffer(); count_mon--;</span>
+        <span class="function">notFull_mon.signal_cond</span>();
+        <span class="comment">// return item;</span>
+    }
+}</code></pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 id="common-sync-challenges">Common Synchronization Challenges</h2>
+
+            <h3 id="deadlock">Deadlock</h3>
+            <p>Two or more processes indefinitely waiting for resources held by each other.</p>
+            <h4>Necessary Conditions:</h4> Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait.
+
+            <h3 id="starvation">Starvation (Indefinite Postponement)</h3>
+            <p>A process is perpetually denied resources, making no progress. Prevented by fair scheduling/allocation (e.g., bounded waiting).</p>
+
+            <h3 id="livelock">Livelock</h3>
+            <p>Processes actively change state in response to others but make no useful progress. They are "busy" but stuck.</p>
+            <h4>Analogy: The Overly Polite Hallway Dance</h4>
+            <p>Two people try to step aside for each other in a narrow hallway, repeatedly mirroring moves and never passing. Unlike deadlock, processes are active, not blocked.</p>
+
+            <h3 id="priority-inversion">Priority Inversion</h3>
+            <p>A high-priority task (H) is blocked by a lower-priority task (L) because L holds a resource H needs, and L itself is preempted by a medium-priority task (M).</p>
+            <h4>Classic Scenario:</h4>
+            <ol>
+                <li>Task L (low) acquires resource R.</li>
+                <li>Task H (high) preempts L, tries to acquire R, blocks.</li>
+                <li>Task M (medium) becomes ready, preempts L (since H is blocked).</li>
+                <li>Result: H waits for L, but L can't run because M is running. H is effectively blocked by M.</li>
+            </ol>
+            <h4>Example: Mars Pathfinder (1997)</h4>
+            <p>System resets due to this. A low-priority meteorological task held a mutex, blocked by a high-priority bus task. A medium-priority communication task preempted the meteorological task, preventing mutex release, leading to a watchdog timeout.</p>
+            <h4>Solutions:</h4>
+            <ul>
+                <li><strong>Priority Inheritance Protocol (PIP):</strong> L temporarily inherits H's priority while holding the resource.</li>
+                <li><strong>Priority Ceiling Protocol (PCP):</strong> Resource has a priority ceiling (highest priority of any task using it). A task acquiring it gets its priority raised to this ceiling.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2 id="related-concepts">Related Concepts</h2>
+
+            <h3 id="concurrency-vs-parallelism">Concurrency vs. Parallelism</h3>
+            <ul>
+                <li><strong>Concurrency:</strong> Tasks appear to run simultaneously (interleaved execution). <em>Dealing with many things at once.</em></li>
+                <li><strong>Parallelism:</strong> Tasks actually run simultaneously (on multiple cores). <em>Doing many things at once.</em></li>
+            </ul>
+
+            <h3 id="thread-safety">Thread Safety</h3>
+            <p>Code behaves correctly when accessed by multiple threads concurrently. Achieved using synchronization mechanisms to protect shared data.</p>
+
+            <h3 id="ipc-and-sync">Inter-Process Communication (IPC) and Synchronization</h3>
+            <p>IPC mechanisms (pipes, shared memory, etc.) often require synchronization (e.g., semaphores for shared memory access) to ensure correct data exchange and coordination.</p>
+
+            <h3 id="data-integrity">Data Integrity in the Context of Process Synchronization</h3>
+            <p>Ensuring shared data remains accurate, consistent, and valid despite concurrent access. Synchronization prevents race conditions, inconsistent updates, and lost updates, thereby maintaining data integrity.</p>
+        </div>
+        
+        <div class="card">
+            <h2 id="summary-sync-techniques">Summary of Synchronization Techniques</h2>
+            
+            <h4>Spinlocks (Busy-Waiting: TSL, Swap)</h4>
+            <ul>
+                <li><strong>Advantages:</strong> Low latency for very short lock holds (no context switch).</li>
+                <li><strong>Disadvantages:</strong> Wastes CPU; priority inversion risk; not for long holds.</li>
+            </ul>
+
+            <h4>Mutexes/Semaphores (Blocking Locks)</h4>
+            <ul>
+                <li><strong>Advantages:</strong> CPU yielded (no wasted cycles); better for longer holds; can incorporate fairness.</li>
+                <li><strong>Disadvantages:</strong> Context switch overhead for short holds; more complex to use perfectly.</li>
+            </ul>
+            
+            <h4>Monitors</h4>
+            <ul>
+                <li><strong>Advantages:</strong> Higher-level, easier to use; implicit ME; clear condition management.</li>
+                <li><strong>Disadvantages:</strong> Language/compiler support; potential for complex deadlocks (e.g., nested calls).</li>
+            </ul>
+            <div class="note">
+                <p>The choice of synchronization mechanism depends on application needs, expected contention, lock duration, and hardware architecture.</p>
+            </div>
+        </div>
+
+        <div class="card centered-text" style="border-top-color: var(--accent-color);">
+            <p>This concludes Chapter 5 on Process Synchronization. A solid grasp of these principles is essential for developing reliable and efficient concurrent software.</p>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Code for toggling code blocks ---
+            const codeToggleButtons = document.querySelectorAll('.toggle-code-btn');
+            codeToggleButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const codeBlock = this.nextElementSibling;
+                    if (codeBlock && codeBlock.tagName === 'PRE') {
+                        codeBlock.classList.toggle('show');
+                        this.textContent = codeBlock.classList.contains('show') ? 'Hide Code' : 'Show Code';
+                    }
+                });
+            });
+
+            // --- Smooth scroll for TOC links ---
+            const tocLinks = document.querySelectorAll('.toc-list a[href^="#"]');
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        const appBarElement = document.querySelector('.app-bar');
+                        const appBarHeight = appBarElement ? appBarElement.offsetHeight : 0;
+                        const elementPosition = targetElement.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - appBarHeight - 20; // 20px for extra space
+                        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                    }
+                });
+            });
+
+            // --- Theme Toggle Functionality ---
+            const themeToggleButton = document.getElementById('theme-toggle-btn');
+            const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    if (themeToggleButton) themeToggleButton.textContent = '☀️'; // Sun icon
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    if (themeToggleButton) themeToggleButton.textContent = '🌓'; // Moon icon
+                }
+            }
+
+            function getInitialTheme() {
+                const storedUserChoice = localStorage.getItem('theme_user_choice');
+                const storedTheme = localStorage.getItem('theme');
+
+                if (storedUserChoice === 'true' && storedTheme) {
+                    return storedTheme; 
+                }
+                if (prefersDarkScheme.matches) {
+                    return 'dark'; 
+                }
+                return 'light'; 
+            }
+
+            const initialTheme = getInitialTheme();
+            applyTheme(initialTheme);
+            if (!localStorage.getItem('theme_user_choice')) { 
+                localStorage.setItem('theme', initialTheme);
+            }
+
+            prefersDarkScheme.addEventListener('change', (e) => {
+                if (localStorage.getItem('theme_user_choice') !== 'true') {
+                     const newOsTheme = e.matches ? 'dark' : 'light';
+                     applyTheme(newOsTheme);
+                     localStorage.setItem('theme', newOsTheme); 
+                }
+            });
+
+            if (themeToggleButton) {
+                themeToggleButton.addEventListener('click', () => {
+                    const currentThemeIsDark = document.body.classList.contains('dark-mode');
+                    const newTheme = currentThemeIsDark ? 'light' : 'dark';
+
+                    applyTheme(newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    localStorage.setItem('theme_user_choice', 'true'); 
+                });
+            }
+        });
+    </script>
+</body>
+</html>
