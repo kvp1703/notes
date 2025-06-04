@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 7: Process Synchronization - The Perils of Concurrency</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Fira+Code:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .mdl-layout__header {
+            background-color: #3f51b5; /* Indigo */
+            color: white;
+        }
+
+        .mdl-layout__header .mdl-layout-title {
+            font-size: 1.8em;
+        }
+
+        .mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
+            font-size: 1.1em;
+            color: #424242;
+            padding: 12px 16px;
+        }
+         .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+            background-color: #e8eaf6; /* Light indigo */
+        }
+
+        .page-content {
+            padding: 20px;
+            max-width: 900px;
+            margin: 20px auto;
+        }
+
+        .mdl-card {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+        }
+        /* Ensure sections/headings targeted by links have scroll margin for fixed header */
+        section[id], h2[id], h3[id] {
+             scroll-margin-top: 80px; /* Adjust based on header height + desired padding */
+        }
+
+        .mdl-card__supporting-text {
+            color: #333;
+            font-size: 1.1em;
+        }
+        .mdl-card__title-text {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        h2, h3, h4 {
+            color: #303f9f; /* Darker Indigo */
+        }
+
+        pre, code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace; /* Fira Code added */
+        }
+
+        pre {
+            background-color: #272822; /* Monokai-like */
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.95em; /* Adjust if Fira Code renders differently */
+            line-height: 1.4; /* Good for code readability */
+        }
+
+        /* Inline code */
+        :not(pre) > code {
+            background-color: #e0e0e0;
+            padding: 2px 5px; /* Slightly more padding */
+            border-radius: 4px; /* Slightly more rounded */
+            color: #c51162; /* Pink accent */
+            font-size: 0.9em; /* Slightly smaller for inline */
+        }
+
+        pre code { /* Reset for code inside pre */
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        .toc {
+            background-color: rgba(232, 234, 246, 0.85);
+            border-left: 5px solid #3f51b5;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc ul li a {
+            text-decoration: none;
+            color: #303f9f;
+            display: block;
+            padding: 5px 0;
+            transition: color 0.2s;
+        }
+        .toc ul li a:hover {
+            color: #1a237e;
+            font-weight: bold;
+        }
+
+        .note {
+            background-color: rgba(255, 249, 196, 0.85);
+            border-left: 5px solid #ffc107; /* Amber */
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .note p { margin: 0; }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .dark-mode .mdl-layout__header {
+            background-color: #1f1f1f;
+        }
+        .dark-mode .mdl-card {
+            background-color: rgba(40, 40, 40, 0.9);
+            color: #e0e0e0;
+        }
+        .dark-mode .mdl-card__supporting-text {
+            color: #e0e0e0;
+        }
+        .dark-mode h2, .dark-mode h3, .dark-mode h4 {
+            color: #bb86fc;
+        }
+        .dark-mode .toc {
+            background-color: rgba(30, 30, 30, 0.85);
+            border-left-color: #bb86fc;
+        }
+        .dark-mode .toc ul li a {
+            color: #bb86fc;
+        }
+        .dark-mode .toc ul li a:hover {
+            color: #cfc2ff;
+        }
+        .dark-mode .note {
+            background-color: rgba(50, 50, 30, 0.85);
+            border-left-color: #fdd835;
+            color: #e0e0e0;
+        }
+        .dark-mode :not(pre) > code { /* Inline code in dark mode */
+            background-color: #333;
+            color: #f06292; /* Light Pink */
+        }
+        .dark-mode .mdl-layout__drawer {
+            background-color: #1e1e1e;
+        }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
+            color: #bb86fc;
+        }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+            background-color: #333;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+        <header class="mdl-layout__header">
+            <div class="mdl-layout__header-row">
+                <span class="mdl-layout-title">Chapter 7: Process Synchronization</span>
+                <div class="mdl-layout-spacer"></div>
+            </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <span class="mdl-layout-title">Subtopics</span>
+            <nav class="mdl-navigation">
+                <a class="mdl-navigation__link" href="#intro">1. Introduction to Synchronization</a>
+                <a class="mdl-navigation__link" href="#deadlock-problem">2. Deadlock: The Problem</a>
+                <a class="mdl-navigation__link" href="#necessary-conditions">3. Necessary Conditions</a>
+                <a class="mdl-navigation__link" href="#resource-types-rag">4. Resources & RAG</a>
+                <a class="mdl-navigation__link" href="#handling-strategies">5. Handling Strategies</a>
+                <a class="mdl-navigation__link" href="#deadlock-prevention">6. Deadlock Prevention</a>
+                <a class="mdl-navigation__link" href="#deadlock-avoidance">7. Deadlock Avoidance</a>
+                <a class="mdl-navigation__link" href="#deadlock-detection">8. Deadlock Detection</a>
+                <a class="mdl-navigation__link" href="#deadlock-recovery">9. Deadlock Recovery</a>
+                <a class="mdl-navigation__link" href="#conclusion">10. Conclusion</a>
+            </nav>
+        </div>
+        <main class="mdl-layout__content">
+            <div class="page-content">
+
+                <button id="darkModeToggle" class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored dark-mode-toggle">
+                    <i class="material-icons">brightness_6</i>
+                </button>
+
+                <div class="toc">
+                    <h4>Chapter Contents</h4>
+                    <ul>
+                        <li><a href="#intro">1. Introduction to Process Synchronization</a></li>
+                        <li><a href="#deadlock-problem">2. Deadlock: The Problem</a>
+                            <ul>
+                                <li><a href="#deadlock-definition">2.1. What is Deadlock?</a></li>
+                                <li><a href="#deadlock-vs-starvation">2.2. Deadlock vs. Starvation</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#necessary-conditions">3. Necessary Conditions for Deadlock</a>
+                            <ul>
+                                <li><a href="#mutual-exclusion">3.1. Mutual Exclusion</a></li>
+                                <li><a href="#hold-and-wait">3.2. Hold and Wait</a></li>
+                                <li><a href="#no-preemption">3.3. No Preemption</a></li>
+                                <li><a href="#circular-wait">3.4. Circular Wait</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#resource-types-rag">4. Resource Types & Resource Allocation Graph (RAG)</a>
+                             <ul>
+                                <li><a href="#resource-instances">4.1. Resource Instances</a></li>
+                                <li><a href="#rag-details">4.2. Resource Allocation Graph (RAG)</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#handling-strategies">5. Deadlock Handling Strategies: An Overview</a></li>
+                        <li><a href="#deadlock-prevention">6. Deadlock Prevention</a>
+                            <ul>
+                                <li><a href="#negate-mutual-exclusion">6.1. Negating Mutual Exclusion</a></li>
+                                <li><a href="#negate-hold-and-wait">6.2. Negating Hold and Wait</a></li>
+                                <li><a href="#negate-no-preemption">6.3. Negating No Preemption</a></li>
+                                <li><a href="#negate-circular-wait">6.4. Negating Circular Wait</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#deadlock-avoidance">7. Deadlock Avoidance</a>
+                            <ul>
+                                <li><a href="#safe-unsafe-states">7.1. Safe State vs. Unsafe State</a></li>
+                                <li><a href="#bankers-algorithm">7.2. Banker's Algorithm</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#deadlock-detection">8. Deadlock Detection</a>
+                            <ul>
+                                <li><a href="#detection-symptoms">8.1. Symptoms & When to Detect</a></li>
+                                <li><a href="#detection-single-instance">8.2. For Single Instance Resources: Wait-For Graph</a></li>
+                                <li><a href="#detection-multiple-instance">8.3. For Multiple Instance Resources: Safety Algorithm Variant</a></li>
+                                <li><a href="#safety-vs-bankers-clarified">8.4. Safety Algorithm (Detection) vs. Banker's Algorithm (Avoidance)</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#deadlock-recovery">9. Deadlock Recovery</a>
+                            <ul>
+                                <li><a href="#recovery-process">9.1. Process-Related Recovery</a></li>
+                                <li><a href="#recovery-resource">9.2. Resource-Related Recovery</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#conclusion">10. Conclusion</a></li>
+                    </ul>
+                </div>
+
+                <!-- CONTENT SECTIONS START HERE -->
+                <section id="intro" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">1. Introduction to Process Synchronization</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>In modern operating systems, multiple processes often run concurrently, sharing system resources like CPU time, memory, files, and I/O devices. This concurrency can significantly improve system throughput and responsiveness. However, it also introduces complexities, especially when processes need to access shared data or resources.</p>
+                        <p>Imagine two processes trying to update the same bank account balance simultaneously. If their operations are interleaved without control, the final balance could be incorrect. This is a classic example of a <strong>race condition</strong>.</p>
+                        <p>To prevent such issues, we need <strong>process synchronization</strong> mechanisms. These mechanisms ensure that cooperating processes execute in an orderly manner, maintaining data consistency and resource integrity. A core concept in synchronization is the <strong>Critical Section</strong>: a segment of code where a process accesses shared resources. Synchronization techniques aim to ensure that at most one process is executing in its critical section (for a particular shared resource) at any given time.</p>
+                        <p>While synchronization tools like mutexes, semaphores, and monitors help manage access to critical sections, improper use or complex interactions can lead to serious problems. One of the most challenging problems arising from resource contention and synchronization is <strong>Deadlock</strong>.</p>
+                    </div>
+                </section>
+
+                <section id="deadlock-problem" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">2. Deadlock: The Problem</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <h3 id="deadlock-definition">2.1. What is Deadlock?</h3>
+                        <p>A <strong>Deadlock</strong> is a state in a system where a set of two or more processes are permanently blocked, each waiting for a resource held by another process in the same set. None of the processes can proceed, release their resources, or be awakened. This results in a standstill, where the involved processes are effectively frozen, unable to make any progress.</p>
+                        <p>Think of a narrow two-way street where two cars meet head-on. Neither car can move forward because the other is in the way, and neither is willing to back up. This is a physical analogy for a deadlock.</p>
+
+                        <h3 id="deadlock-vs-starvation">2.2. Deadlock vs. Starvation</h3>
+                        <p>It's crucial to distinguish deadlock from a related problem called <strong>Starvation</strong> (also known as indefinite postponement).</p>
+                        <ul>
+                            <li><strong>Deadlock:</strong> A set of processes are blocked for an <strong>infinite</strong> time. Each process in the set is waiting for an event (resource release) that can only be triggered by another blocked process in the set. There is no external way for them to proceed without intervention. It's a permanent, circular waiting condition.</li>
+                            <li><strong>Starvation:</strong> A process is blocked for an <strong>indefinite</strong> (but not necessarily infinite) time. The process is repeatedly denied access to a resource it needs, even though the resource may become available. This can happen due to unfair scheduling policies or resource allocation strategies that consistently favor other processes. The process *could* eventually run, but there's no guarantee when.</li>
+                        </ul>
+                        <div class="note">
+                            <p><strong>Core Distinction:</strong> In deadlock, the blocking is permanent and circular among a group. In starvation, a process might be perpetually unlucky in acquiring resources, but the system isn't necessarily in a circular wait. For example, a low-priority process might starve if high-priority processes keep arriving.</p>
+                        </div>
+                        <p>Consider a scenario: Process A holds Resource X and waits for Resource Y. Process B holds Resource Y and waits for Resource X. This is a deadlock.</p>
+                        <p>Now, consider Process C, which needs Resource Z. Resource Z is frequently used by high-priority Processes D and E. Even if Z becomes free, D or E might get it before C. C is starving but not necessarily part of a deadlock involving D and E.</p>
+                    </div>
+                </section>
+
+                <section id="necessary-conditions" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">3. Necessary Conditions for Deadlock</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>A deadlock situation can arise if and only if four conditions hold simultaneously in a system. These are known as the Coffman conditions:</p>
+                        <h3 id="mutual-exclusion">3.1. Mutual Exclusion</h3>
+                        <p>At least one resource must be held in a non-sharable mode. This means that only one process can use the resource at any given time. If another process requests that resource, the requesting process must be delayed until the resource has been released.</p>
+                        <ul>
+                            <li><strong>Core Idea:</strong> Resources like printers, CPU registers, or a file opened in write mode are inherently non-sharable. If resources were infinitely sharable, this condition wouldn't hold, and deadlocks over those resources wouldn't occur.</li>
+                            <li><strong>Example:</strong> A printer can only print one document at a time. If Process P1 is using the printer, Process P2 must wait.</li>
+                        </ul>
+
+                        <h3 id="hold-and-wait">3.2. Hold and Wait</h3>
+                        <p>A process must be holding at least one resource and waiting to acquire additional resources that are currently being held by other processes.</p>
+                        <ul>
+                            <li><strong>Core Idea:</strong> Processes don't grab all they need at once. They acquire some, start working, and then request more. This incremental acquisition while holding existing resources is key.</li>
+                            <li><strong>Example:</strong> Process P1 holds Resource R1 (e.g., a database lock) and is waiting for Resource R2 (e.g., a tape drive), which is currently held by Process P2.</li>
+                        </ul>
+
+                        <h3 id="no-preemption">3.3. No Preemption</h3>
+                        <p>Resources cannot be preempted. That is, a resource can be released only voluntarily by the process holding it, after that process has completed its task with that resource. No external entity (like the OS) can forcefully take a resource away from a process holding it.</p>
+                        <ul>
+                            <li><strong>Core Idea:</strong> Once a process gets a resource, it keeps it until it's done. You can't just "snatch" it away.</li>
+                            <li><strong>Example:</strong> If Process P1 is writing to a file, the OS typically won't take the file access away from P1 midway through its write operation, as this could lead to data corruption. P1 must release it.</li>
+                        </ul>
+
+                        <h3 id="circular-wait">3.4. Circular Wait</h3>
+                        <p>There must exist a set {P0, P1, ..., Pn} of waiting processes such that P0 is waiting for a resource held by P1, P1 is waiting for a resource held by P2, ..., Pn-1 is waiting for a resource held by Pn, and Pn is waiting for a resource held by P0.</p>
+                        <ul>
+                            <li><strong>Core Idea:</strong> This is the "circular dependency" that seals the deadlock. Each process in the chain holds something the next one needs.</li>
+                            <li><strong>Example:</strong>
+                                <ul>
+                                    <li>Process P0 holds Resource R0 and waits for Resource R1.</li>
+                                    <li>Process P1 holds Resource R1 and waits for Resource R2.</li>
+                                    <li>Process P2 holds Resource R2 and waits for Resource R0.</li>
+                                </ul>
+                                This forms a circular chain P0 → R1 → P1 → R2 → P2 → R0 → P0.
+                            </li>
+                        </ul>
+                        <div class="note">
+                            <p><strong>Crucial Point:</strong> All four conditions *must* be present for a deadlock to occur. If even one of these conditions is prevented, deadlock is impossible. This insight forms the basis for deadlock prevention strategies.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="resource-types-rag" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">4. Resource Types & Resource Allocation Graph (RAG)</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>Understanding resources is key to understanding deadlocks. Resources can be categorized by the number of instances they have.</p>
+                        <h3 id="resource-instances">4.1. Resource Instances</h3>
+                        <ul>
+                            <li><strong>Single Instance Resources:</strong> These are resources of which only one unit exists in the system.
+                                <ul>
+                                    <li>Examples: A system might have only one physical printer, one tape drive, or a specific critical section of code protected by a single mutex.</li>
+                                    <li>Notation: Resource Type R_A with 1 instance.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Multiple Instance Resources:</strong> These are resources of which multiple identical units exist. Any one of these units can satisfy a request for the resource.
+                                <ul>
+                                    <li>Examples: A system might have 3 identical CPUs (for scheduling), 5 identical tape drives, or a pool of 10 memory blocks of a certain size. A semaphore initialized to N > 1 can represent N instances of a generic resource.</li>
+                                    <li>Notation: Resource Type R_A with 5 instances.</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <h3 id="rag-details">4.2. Resource Allocation Graph (RAG)</h3>
+                        <p>A Resource Allocation Graph (RAG) is a directed graph used to visually represent the state of resource allocations and requests in a system. It helps in understanding and detecting deadlocks.</p>
+                        <p>A RAG consists of a set of vertices V and a set of edges E.</p>
+                        <ul>
+                            <li><strong>Vertices (V):</strong>
+                                <ul>
+                                    <li><strong>Processes (P):</strong> Represented by circles (e.g., P1, P2).</li>
+                                    <li><strong>Resource Types (R):</strong> Represented by rectangles (e.g., R_A, R_B). Dots inside the rectangle represent the number of instances of that resource type.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Edges (E):</strong>
+                                <ul>
+                                    <li><strong>Request Edge (Pi → Rj):</strong> A directed edge from process Pi to resource type Rj indicates that process Pi has requested an instance of resource type Rj and is currently waiting for it. Represented by an arrow from the process circle to the resource rectangle.</li>
+                                    <li><strong>Assignment Edge (Rj → Pi):</strong> A directed edge from resource type Rj to process Pi indicates that an instance of resource type Rj has been allocated to process Pi. Represented by an arrow from a dot within the resource rectangle to the process circle.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p><strong>Interpreting RAG for Deadlocks:</strong></p>
+                        <ul>
+                            <li><strong>If the RAG contains no cycles:</strong> No deadlock exists in the system.</li>
+                            <li><strong>If the RAG contains a cycle:</strong>
+                                <ul>
+                                    <li><strong>If each resource type in the cycle has only a single instance:</strong> A deadlock definitely exists. The cycle is a sufficient condition for deadlock.</li>
+                                    <li><strong>If resource types in the cycle have multiple instances:</strong> A cycle is a necessary but *not sufficient* condition for deadlock. A deadlock *may* exist. Further analysis (like a safety algorithm) is needed. A process might be waiting for a resource in the cycle, but there could be another instance of that resource available or held by a process not in the cycle that will eventually release it.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p><strong>Example of a simple RAG leading to deadlock (single instances):</strong></p>
+                        <pre>
+P1 requests R1 (P1 → R1)
+R1 is held by P2 (R1 → P2, if R1 was the specific instance)
+Actually, more accurately for RAG representation:
+Process P1 holds Resource Instance R_A_i and requests Resource Type R_B.
+Process P2 holds Resource Instance R_B_j and requests Resource Type R_A.
+
+Visualized:
+  (P1) --request--> [R_B]
+    ^                |
+    | assigned       | assigned
+  [R_A] <--request-- (P2)
+
+Cycle: P1 → R_B (instance held by P2) → P2 → R_A (instance held by P1) → P1. This is a deadlock.
+                        </pre>
+                    </div>
+                </section>
+
+                <section id="handling-strategies" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">5. Deadlock Handling Strategies: An Overview</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>Operating systems can deal with the deadlock problem in one of several ways:</p>
+                        <ol>
+                            <li><strong>Deadlock Prevention or Avoidance:</strong> These are proactive approaches. The goal is to ensure that the system will *never* enter a deadlock state.
+                                <ul>
+                                    <li><strong>Prevention:</strong> Design the system to negate one or more of the four necessary conditions for deadlock. This is often restrictive.</li>
+                                    <li><strong>Avoidance:</strong> Use information about future resource needs of processes to decide if a resource request can be granted safely. If granting a request might lead to a deadlock, the process is made to wait.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Deadlock Detection and Recovery:</strong> This is a reactive approach. The system allows deadlocks to occur, then provides mechanisms to detect them and recover from them.</li>
+                            <li><strong>Ignore the Problem (Ostrich Algorithm):</strong> Pretend that deadlocks never occur. This is a common approach used by many operating systems (like UNIX and Windows) for general user processes. It's based on the assumption that deadlocks are rare, and the overhead of prevention/avoidance/detection is higher than the cost of an occasional deadlock (which might require a system reboot or manual process termination). This is not suitable for critical systems.</li>
+                        </ol>
+                        <p>We will now delve into Prevention, Avoidance, Detection, and Recovery in detail.</p>
+                    </div>
+                </section>
+
+                <section id="deadlock-prevention" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">6. Deadlock Prevention</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>Deadlock prevention works by ensuring that at least one of the four necessary conditions for deadlock cannot hold. Let's examine how to negate each condition:</p>
+
+                        <h3 id="negate-mutual-exclusion">6.1. Negating Mutual Exclusion</h3>
+                        <p><strong>Idea:</strong> Make resources sharable. If no resource requires exclusive access, then mutual exclusion is not required, and deadlock is impossible.</p>
+                        <ul>
+                            <li><strong>Feasibility:</strong> This is not generally possible for many types of resources. For example, a printer cannot be shared by multiple processes simultaneously printing different documents. Some resources, like read-only files, are inherently sharable. For others, like writeable data structures, making them "sharable" without proper synchronization leads to race conditions, which is what we were trying to solve in the first place.</li>
+                            <li><strong>Consequence:</strong> Generally impractical for most critical resources. Spooling (e.g., for printers) can make a dedicated resource appear sharable by queuing requests, but the underlying device is still used exclusively.</li>
+                        </ul>
+
+                        <h3 id="negate-hold-and-wait">6.2. Negating Hold and Wait</h3>
+                        <p>To negate this condition, we must ensure that whenever a process requests a resource, it does not hold any other resources.</p>
+                        <p>Two common protocols are:</p>
+                        <ol>
+                            <li>
+                                <strong>Request All Resources at Once (All-or-Nothing Allocation):</strong> A process must request all its required resources before it begins execution. The system grants all resources or none. If all are granted, the process can run. If not, it waits, holding no resources.
+                                <ul>
+                                    <li><strong>Problem (Hold):</strong> While this prevents the "wait" part of "hold and wait" *during the request phase*, once the process gets all resources, it *holds* them, potentially for a long time, even if some are needed only much later. This leads to poor resource utilization.</li>
+                                    <li><strong>Problem (Starvation):</strong> A process needing many popular resources might wait indefinitely (starve) if at least one of its requested resources is always in use.</li>
+                                    <li><strong>Problem (Prediction):</strong> Processes often don't know all the resources they'll need in advance.</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Release All Resources Before Requesting New Ones:</strong> A process must release all resources it currently holds before it can request any new resources.
+                                <ul>
+                                    <li><strong>Problem (Starvation/Inefficiency):</strong> This can be highly inefficient. A process might have completed significant work with a set of resources, then needs one more. It has to release everything, re-request all (including the new one), and potentially re-do work if intermediate states were lost. This also increases the window for starvation.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p><strong>Overall:</strong> These techniques can solve deadlock but often lead to low resource utilization and potential starvation.</p>
+
+                        <h3 id="negate-no-preemption">6.3. Negating No Preemption</h3>
+                        <p><strong>Idea:</strong> If a process holding some resources requests another resource that cannot be immediately allocated to it, then all resources currently being held by this process are preempted (taken away).</p>
+                        <p>Two approaches:</p>
+                        <ol>
+                            <li>
+                                <strong>Forceful Preemption:</strong> If a process P1 requests a resource held by P2, and P2 is waiting for another resource, the OS could preempt the resource from P2 and give it to P1 (or another high-priority process).
+                                <ul>
+                                    <li><strong>Consequence:</strong> Complex to implement. Preempting a resource can be problematic if the process was in the middle of an update (e.g., modifying a file). The state of the resource must be saved and restored. This can lead to significant overhead and potential data inconsistency if not handled carefully. Can also lead to <strong>starvation</strong> if a process's resources are repeatedly preempted.</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Self-Resource Preemption (Voluntary Preemption):</strong> If a process requests a resource and it's unavailable, the process voluntarily releases all resources it currently holds. It's then put back in the waiting queue for all its original resources plus the new one.
+                                <ul>
+                                    <li><strong>Consequence:</strong> Similar to the "Release All Resources" strategy under Hold and Wait. Can lead to <strong>starvation</strong> and inefficiency. A process "releases resources of ourself thinking that others might need them."</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p><strong>Overall:</strong> Preemption is often applied to resources whose state can be easily saved and restored (e.g., CPU registers, memory). It's rarely applied to resources like printers or files mid-operation.</p>
+
+                        <h3 id="negate-circular-wait">6.4. Negating Circular Wait</h3>
+                        <p><strong>Idea:</strong> Impose a total ordering of all resource types, and require that each process requests resources in an increasing (or decreasing) order of enumeration.</p>
+                        <ul>
+                            <li><strong>Mechanism (Linearity in Resources):</strong> Assign a unique integer to each resource type (e.g., R1=1, R2=2, R3=3). A process can request resources only in increasing order of their numbers. That is, if a process holds resource R_i, it can only request resources R_j such that j > i.</li>
+                            <li><strong>Alternative:</strong> If a process currently holds R_i and needs R_k where k < i, it must first release R_i (and any other resources R_m where m > k), then request R_k, and then re-request R_i (and others) in order.</li>
+                            <li><strong>Why it works:</strong> A circular wait implies P0 waits for R_a held by P1, P1 waits for R_b held by P2, ..., Pn waits for R_z held by P0. If we assign numbers f(R_a), f(R_b), ..., f(R_z) to these resources, then for a circular wait to exist under this protocol, we would need f(R_a) < f(R_b) < ... < f(R_z) < f(R_a). This is a contradiction, so a cycle cannot form.</li>
+                            <li><strong>Example:</strong> Resources FDD=1, Tape Drive=2, Printer=3.
+                                <ul>
+                                    <li>Process P can request FDD, then Tape Drive, then Printer. Valid.</li>
+                                    <li>If P holds Tape Drive (2) and Printer (3), and now needs FDD (1), it must release Printer, then release Tape Drive, then request FDD, then Tape Drive, then Printer.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Consequence:</strong> Resource ordering is a practical and widely used prevention technique, especially in database systems for lock ordering. However, it can be inconvenient for programmers and may not always be natural for the problem at hand, potentially leading to reduced resource utilization if resources must be acquired earlier than needed just to maintain order.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="deadlock-avoidance" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">7. Deadlock Avoidance</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>Deadlock avoidance requires that the operating system be given additional information in advance concerning which resources a process will request and use during its lifetime. With this information, the system can decide for each request whether or not the process should wait. It dynamically examines the resource-allocation state to ensure that a circular-wait condition can never exist.</p>
+                        <p>The resource-allocation state is defined by the number of available and allocated resources, and the maximum demands of the processes.</p>
+
+                        <h3 id="safe-unsafe-states">7.1. Safe State vs. Unsafe State</h3>
+                        <ul>
+                            <li><strong>Safe State:</strong> A state is safe if the system can allocate resources to each process (up to its maximum) in some order and still avoid a deadlock. More formally, a state is safe if there exists a <strong>safe sequence</strong> of processes <P1, P2, ..., Pn> such that for each Pi, the resources that Pi can still request can be satisfied by the currently available resources plus the resources held by all Pj, with j < i. If Pi's resource needs are not immediately available, then Pi can wait until all Pj (j < i) have finished and released their resources. When they do, Pi can obtain all of its needed resources, complete its designated task, return its allocated resources, and terminate.</li>
+                            <li><strong>Unsafe State:</strong> A state that is not safe. An unsafe state is <strong>not necessarily a deadlocked state</strong>. It's a state that *could* potentially lead to a deadlock if processes make unfortunate sequences of future requests. The OS cannot guarantee that deadlock will be avoided if the system is in an unsafe state.</li>
+                        </ul>
+                        <div class="note">
+                            <p><strong>Key Idea of Avoidance:</strong> The system must ensure it never enters an unsafe state. When a process requests resources, the system pretends to grant them, then checks if the resulting state is safe. If yes, grant. If no, the process must wait. </p>
+                            <p>Regarding your note: "Unsafe state: Cycle is present in case of single instance. In case of multiple instance when it is not safe state, its unsafe state."
+                            This is slightly nuanced.
+                            - For <strong>single instance resources</strong>, if an allocation leads to a cycle in the RAG, it's not just an unsafe state, it *is* a deadlocked state. Avoidance algorithms for single instance resources (like a RAG cycle detection *before* granting a request) would prevent this cycle formation.
+                            - For <strong>multiple instance resources</strong>, an unsafe state means there's no sequence in which all processes can complete. It doesn't *immediately* mean a deadlock or a cycle (though a deadlock implies an unsafe state). The Banker's algorithm helps navigate this.
+                            </p>
+                        </div>
+
+                        <h3 id="bankers-algorithm">7.2. Banker's Algorithm</h3>
+                        <p>The Banker's Algorithm is a prominent deadlock avoidance algorithm that works for systems with multiple instances of each resource type. It's named so because it models how a banker might manage a limited amount of money to satisfy customer loan requests without going bankrupt.</p>
+                        <p><strong>Prerequisites:</strong></p>
+                        <ol>
+                            <li>Each process must declare its <strong>maximum</strong> possible claim on each resource type. This cannot change during execution.</li>
+                            <li>When a process requests resources, it may have to wait.</li>
+                            <li>When a process gets all its requested resources, it must return them in a finite amount of time.</li>
+                        </ol>
+
+                        <p><strong>Data Structures for Banker's Algorithm:</strong></p>
+                        Let 'n' be the number of processes and 'm' be the number of resource types.
+                        <ul>
+                            <li><strong>Available (Vector of length m):</strong> <code>Available[j] = k</code> means there are 'k' instances of resource type Rj available.</li>
+                            <li><strong>Max (n x m matrix):</strong> <code>Max[i][j] = k</code> means process Pi may request at most 'k' instances of resource type Rj.</li>
+                            <li><strong>Allocation (n x m matrix):</strong> <code>Allocation[i][j] = k</code> means process Pi is currently allocated 'k' instances of resource type Rj.</li>
+                            <li><strong>Need (n x m matrix):</strong> <code>Need[i][j] = k</code> means process Pi may still need 'k' more instances of resource type Rj to complete its task.
+                                <br><code>Need[i][j] = Max[i][j] - Allocation[i][j]</code>.</li>
+                        </ul>
+
+                        <p><strong>The Banker's Algorithm consists of two main parts:</strong></p>
+                        <ol>
+                            <li><strong>Safety Algorithm:</strong> This algorithm determines if the current system state is safe.
+                                <ol>
+                                    <li>Initialize <code>Work = Available</code> (vector of length m) and <code>Finish[i] = false</code> for all i (vector of length n).</li>
+                                    <li>Find an index 'i' such that both:
+                                        <br>a. <code>Finish[i] == false</code>
+                                        <br>b. <code>Need[i] <= Work</code> (vector comparison: Need[i][j] <= Work[j] for all j)
+                                    </li>
+                                    <li>If no such 'i' exists, go to step 4.</li>
+                                    <li><code>Work = Work + Allocation[i]</code> (process Pi releases its resources)
+                                        <br><code>Finish[i] = true</code>
+                                        <br>Go to step 2.
+                                    </li>
+                                    <li>If <code>Finish[i] == true</code> for all 'i', then the system is in a safe state. Otherwise, it's unsafe.</li>
+                                </ol>
+                            </li>
+                            <li><strong>Resource-Request Algorithm (for process Pi requesting resources `Request_i`):</strong>
+                                <ol>
+                                    <li>If <code>Request_i <= Need[i]</code>, go to step 2. Otherwise, raise an error (process exceeded its max claim).</li>
+                                    <li>If <code>Request_i <= Available</code>, go to step 3. Otherwise, Pi must wait (resources not available).</li>
+                                    <li>Pretend to allocate requested resources to Pi:
+                                        <br><code>Available = Available - Request_i</code>
+                                        <br><code>Allocation[i] = Allocation[i] + Request_i</code>
+                                        <br><code>Need[i] = Need[i] - Request_i</code>
+                                    </li>
+                                    <li>Now, run the <strong>Safety Algorithm</strong> on this new (hypothetical) state.
+                                        <ul>
+                                            <li>If the state is safe, the resources are actually allocated to Pi.</li>
+                                            <li>If the state is unsafe, Pi must wait, and the old resource-allocation state is restored (the pretend allocation is rolled back).</li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                            </li>
+                        </ol>
+                        <p><strong>Complexity:</strong> The Banker's algorithm is O(m * n^2) for the safety check, which can be significant if run frequently. Declaring maximum needs can also be difficult for processes.</p>
+                    </div>
+                </section>
+
+                <section id="deadlock-detection" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">8. Deadlock Detection</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>If a system does not employ either deadlock prevention or deadlock avoidance, then a deadlock situation may occur. In this environment, the system must provide:</p>
+                        <ul>
+                            <li>An algorithm that examines the state of the system to determine whether a deadlock has occurred.</li>
+                            <li>An algorithm to recover from the deadlock.</li>
+                        </ul>
+
+                        <h3 id="detection-symptoms">8.1. Symptoms & When to Detect Deadlock</h3>
+                        <p>The OS might suspect a deadlock if it observes certain symptoms:</p>
+                        <ul>
+                            <li><strong>Majority of processes are getting blocked:</strong> Many processes are in a wait state for extended periods.</li>
+                            <li><strong>Lower CPU utilization:</strong> If many processes are blocked, the CPU will be idle more often as fewer processes are ready to run.</li>
+                            <li>System throughput drops significantly.</li>
+                        </ul>
+                        <p><strong>When should the detection algorithm be invoked?</strong></p>
+                        <ul>
+                            <li><strong>Periodically:</strong> Run the detection algorithm at fixed time intervals (e.g., every hour or when CPU utilization drops below a threshold). This can be too late or too frequent.</li>
+                            <li><strong>On resource request:</strong> Run it whenever a resource request cannot be immediately granted. This is more targeted but can be computationally expensive if requests are frequent.</li>
+                        </ul>
+
+                        <h3 id="detection-single-instance">8.2. For Single Instance Resources: Wait-For Graph (WFG)</h3>
+                        <p>If all resources have only a single instance, we can use a variant of the Resource Allocation Graph called a <strong>Wait-For Graph (WFG)</strong>.</p>
+                        <ul>
+                            <li><strong>Construction:</strong> The WFG is obtained from the RAG by removing the resource nodes and collapsing the corresponding edges.
+                                <ul>
+                                    <li>Nodes are only processes.</li>
+                                    <li>An edge Pi → Pj exists in the WFG if process Pi is waiting for a resource currently held by process Pj.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Detection:</strong> A deadlock exists in the system if and only if there is a <strong>cycle</strong> in the wait-for graph. Standard graph algorithms (like Depth First Search) can be used to detect cycles.
+                                <pre>
+If P1 holds R1 and waits for R2,
+and P2 holds R2 and waits for R1.
+
+RAG: (P1) → [R2] ← (P2)
+       ↑      ↓
+      [R1]----↑ (P2 requests R1)
+
+Wait-For Graph (WFG):
+(P1) → (P2) → (P1)  (Cycle: P1 waits for P2, P2 waits for P1)
+This means P1 is waiting for a resource held by P2, and P2 is waiting for a resource held by P1.
+                                </pre>
+                            </li>
+                            <li><strong>Complexity:</strong> If there are 'n' processes, cycle detection is typically O(n+e) where 'e' is the number of edges, or O(n^2) in the worst case for dense graphs.</li>
+                        </ul>
+
+                        <h3 id="detection-multiple-instance">8.3. For Multiple Instance Resources: Safety Algorithm Variant</h3>
+                        <p>When resources have multiple instances, a cycle in the RAG is necessary but not sufficient for deadlock. A detection algorithm similar to the Banker's Algorithm's Safety Algorithm is used.</p>
+                        <p><strong>Data Structures (similar to Banker's, but `Request` instead of `Need`):</strong></p>
+                        <ul>
+                            <li><strong>Available (Vector of length m):</strong> Number of available instances of each resource.</li>
+                            <li><strong>Allocation (n x m matrix):</strong> Number of instances of each resource currently allocated to each process.</li>
+                            <li><strong>Request (n x m matrix):</strong> The current request of each process. `Request[i][j] = k` means Pi is waiting for 'k' instances of Rj. Processes that are not waiting for anything have `Request[i]` as a zero vector.</li>
+                        </ul>
+                        <p><strong>Detection Algorithm Steps:</strong></p>
+                        <ol>
+                            <li>Initialize <code>Work = Available</code>.
+                                <br>Initialize <code>Finish[i] = false</code> for all processes Pi. For processes Pi that have <code>Allocation[i] == 0</code> (not holding any resources), set <code>Finish[i] = true</code> initially if they are not requesting anything, or based on whether their current request is zero. More accurately, for any process Pi for which <code>Allocation[i,j] == 0</code> for all j, set <code>Finish[i] = true</code>. (This step is slightly different from Safety Algo in Banker's as we are checking current state, not future potential).
+                                <br>More precisely, initialize <code>Work = Available</code>.
+                                For i = 1 to n: if <code>Allocation[i]</code> is all zeros (i.e., <code>Allocation[i][j] == 0</code> for all j), then <code>Finish[i] = true</code>; else <code>Finish[i] = false</code>.
+                            </li>
+                            <li>Find an index 'i' such that both:
+                                <br>a. <code>Finish[i] == false</code>
+                                <br>b. <code>Request[i] <= Work</code> (Pi's outstanding requests can be satisfied)
+                            </li>
+                            <li>If no such 'i' exists, go to step 5.</li>
+                            <li><code>Work = Work + Allocation[i]</code> (Assume Pi gets its request, finishes, and releases all its resources)
+                                <br><code>Finish[i] = true</code>
+                                <br>Go to step 2.
+                            </li>
+                            <li>If <code>Finish[i] == false</code> for any process 'i', then the system is in a deadlocked state. The processes 'Pi' for which <code>Finish[i] == false</code> are the deadlocked processes.</li>
+                        </ol>
+                        <p><strong>Complexity:</strong> O(m * n^2), similar to the Banker's safety algorithm.</p>
+
+                        <h3 id="safety-vs-bankers-clarified">8.4. Safety Algorithm (in Detection) vs. Banker's Algorithm (in Avoidance)</h3>
+                        <div class="note">
+                        <p>Your note is spot on and provides the core distinction:</p>
+                        <p>"Banker’s algo is a <strong>deadlock avoidance</strong> algorithm. It's used *before* allocating resources. When a process requests a set of resources, the Banker's Algorithm checks if granting that request would lead to an unsafe state. If it would lead to an unsafe state, the request is denied (process waits). It requires prior knowledge of <strong>maximum resource needs (Max matrix)</strong> for all processes."</p>
+                        <p>"The Safety algorithm used in <strong>deadlock detection</strong> is run *after* resources have been allocated (or requests have been made and processes are waiting) to see if the system is *currently* in a deadlocked state. It doesn't require prior knowledge of maximum resource needs; it only works with the <strong>current allocation (Allocation matrix)</strong> and <strong>outstanding requests (Request matrix)</strong>."</p>
+                        </div>
+                        <p><strong>To further clarify:</strong></p>
+                        <ul>
+                            <li><strong>Purpose:</strong>
+                                <ul>
+                                    <li>Banker's (Avoidance): To decide if a *pending request* can be granted safely without risking future deadlock.</li>
+                                    <li>Safety for Detection: To determine if the *current system state* is already deadlocked.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Input Data:</strong>
+                                <ul>
+                                    <li>Banker's: Uses `Max`, `Allocation`, `Available`, `Need` (derived from Max and Allocation).</li>
+                                    <li>Safety for Detection: Uses `Allocation`, `Available`, `Request` (current outstanding requests).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Outcome:</strong>
+                                <ul>
+                                    <li>Banker's: "Yes, grant the request" or "No, process must wait." The goal is to stay in a safe state.</li>
+                                    <li>Safety for Detection: "System is deadlocked (and identifies which processes)" or "System is not deadlocked."</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p>The "Safety Algorithm" is a common underlying logic pattern. In Banker's, it checks if a *hypothetical future state* (after granting a request) is safe based on *maximum future needs*. In detection, a similar logic checks if the *current state* allows all non-finished processes to complete based on their *current outstanding requests*.</p>
+
+                    </div>
+                </section>
+
+                <section id="deadlock-recovery" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">9. Deadlock Recovery</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>Once a deadlock has been detected, the system must recover. There are two main approaches to recovery:</p>
+
+                        <h3 id="recovery-process">9.1. Process-Related Recovery: Process Termination</h3>
+                        <p>This involves aborting one or more processes to break the circular wait.</p>
+                        <ol>
+                            <li>
+                                <strong>Abort All Deadlocked Processes:</strong>
+                                <ul>
+                                    <li><strong>Description:</strong> This is the simplest and most drastic method. It will certainly break the deadlock cycle.</li>
+                                    <li><strong>Consequence:</strong> Highly expensive, as all the computation done by these processes is lost. Processes may need to be restarted from scratch.</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Abort One Process at a Time Until the Deadlock Cycle is Eliminated:</strong>
+                                <ul>
+                                    <li><strong>Description:</strong> The system aborts one deadlocked process, reclaims its resources, and then re-runs the deadlock detection algorithm. This is repeated until the deadlock is resolved.</li>
+                                    <li><strong>Challenge:</strong> Requires a rational basis for choosing which process to abort (the "victim"). Factors for selecting a victim include:
+                                        <ul>
+                                            <li>Process priority.</li>
+                                            <li>How long the process has computed and how much longer it needs.</li>
+                                            <li>Resources the process has used and is holding.</li>
+                                            <li>Number of processes that will need to be terminated.</li>
+                                            <li>Is the process interactive or batch?</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Consequence:</strong> Less disruptive than aborting all, but still involves loss of work and potential overhead in repeatedly detecting deadlocks and selecting victims. There's also a risk of starvation if the same process is consistently chosen as a victim.</li>
+                                </ul>
+                            </li>
+                        </ol>
+                        <p>Your note "Abort currently running process" is a bit ambiguous. If a process is "running" (i.e., has the CPU and is not blocked), it's unlikely to be part of the deadlocked set directly, unless it's about to make a request that would complete the cycle. Typically, we abort processes that are *blocked* and part of the identified deadlock.</p>
+
+                        <h3 id="recovery-resource">9.2. Resource-Related Recovery: Resource Preemption</h3>
+                        <p>This involves taking resources away from some processes and giving them to others until the deadlock is broken.</p>
+                        <ol>
+                            <li>
+                                <strong>Resource Preemption (Forceful Snatching):</strong>
+                                <ul>
+                                    <li><strong>Description:</strong> Successively preempt some resources from processes and give these resources to other processes until the deadlock cycle is broken.
+                                    This is "kind of forceful snatching so that all the process could run."</li>
+                                    <li><strong>Issues to Address:</strong>
+                                        <ul>
+                                            <li><strong>Victim Selection:</strong> Which process and which resource to preempt? Minimize cost. Factors are similar to process termination victim selection.
+                                            </li>
+                                            <li><strong>Rollback:</strong> If a resource is preempted from a process, that process cannot continue with its normal execution. It must be rolled back to some safe state before it acquired that resource, so it can restart from that point later. This can be difficult or impossible if the process has modified data that cannot be easily undone.
+                                            </li>
+                                            <li><strong>Starvation:</strong> How to ensure that a process doesn't starve from having its resources constantly preempted? A process might be chosen as a victim repeatedly. One solution is to include the number of times a process has been preempted in the cost factor for victim selection.
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Rollback (as a specific preemption strategy):</strong>
+                                <ul>
+                                    <li><strong>Description:</strong> This is a more systematic form of preemption. The system periodically creates checkpoints (snapshots of process states and resource allocations). When a deadlock is detected, one or more processes are rolled back to a previous checkpoint. This rollback frees up resources held by the rolled-back process since that checkpoint.
+                                    </li>
+                                    <li><strong>Your note:</strong> "keep pre-empting latest resource and add them to available pool and run safety algo after each preemption until cycle is broken." This is a good iterative approach.
+                                        After each preemption of a resource (or set of resources by rolling back a process), the system would add these resources to the `Available` pool and then re-run a detection algorithm (like the Safety Algorithm variant or WFG cycle detection) to see if the deadlock is resolved. This continues until the deadlock is broken.
+                                    </li>
+                                    <li><strong>Consequence:</strong> Requires checkpointing overhead. Determining how far to roll back is crucial. Rolling back too little might not break the deadlock; rolling back too much loses excessive computation.
+                                    </li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </section>
+
+                <section id="conclusion" class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">10. Conclusion</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>Deadlock is a complex and serious problem in concurrent systems where processes compete for exclusive access to a finite set of resources. Understanding the four necessary conditions—Mutual Exclusion, Hold and Wait, No Preemption, and Circular Wait—is fundamental to comprehending how deadlocks arise and how they can be handled.</p>
+                        <p>Strategies for dealing with deadlocks range from prevention (designing the system so deadlocks are impossible), to avoidance (making judicious resource allocation decisions to sidestep deadlocks), to detection and recovery (letting deadlocks happen and then fixing them). Each strategy has its own trade-offs in terms of system overhead, resource utilization, and implementation complexity.</p>
+                        <ul>
+                            <li><strong>Prevention</strong> can be too restrictive, leading to underutilized resources or developer inconvenience.</li>
+                            <li><strong>Avoidance</strong>, exemplified by the Banker's Algorithm, requires prior knowledge of maximum resource needs, which isn't always available, and can be computationally intensive.</li>
+                            <li><strong>Detection and Recovery</strong> adds runtime overhead for detection and can be disruptive when recovery actions like process termination or resource preemption are invoked.</li>
+                            <li>Many general-purpose operating systems opt to <strong>ignore</strong> the problem for most user applications, assuming deadlocks are rare enough that the cost of sophisticated handling outweighs the benefits. However, for critical systems or database environments, robust deadlock handling is essential.</li>
+                        </ul>
+                        <p>A thorough grasp of these concepts allows system designers and programmers to build more robust and reliable concurrent applications, minimizing the risks and impacts of deadlocks.</p>
+                    </div>
+                </section>
+                <!-- CONTENT SECTIONS END HERE -->
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const body = document.body;
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const darkModeIcon = darkModeToggle.querySelector('.material-icons');
+        const layout = document.querySelector('.mdl-layout');
+        const scrollContainer = document.querySelector('.mdl-layout__content'); // MDL's main scrollable area
+
+        function setDarkModeIcon(isDark) {
+            if (darkModeIcon) {
+                darkModeIcon.textContent = isDark ? 'brightness_7' : 'brightness_4';
+            }
+        }
+
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            body.classList.add('dark-mode');
+            setDarkModeIcon(true);
+        } else {
+            body.classList.remove('dark-mode');
+            setDarkModeIcon(false);
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDarkModeEnabled = body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkModeEnabled ? 'enabled' : 'disabled');
+            setDarkModeIcon(isDarkModeEnabled);
+        });
+
+        document.querySelectorAll('.toc a[href^="#"], .mdl-layout__drawer .mdl-navigation__link[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+
+                if (targetElement && scrollContainer) {
+                    const header = document.querySelector('.mdl-layout__header');
+                    let headerOffset = 0;
+                    if (header && getComputedStyle(header).position === 'fixed') { // Only offset if header is actually fixed
+                        headerOffset = header.offsetHeight;
+                    }
+                    
+                    const targetPositionInContainer = targetElement.getBoundingClientRect().top - 
+                                                      scrollContainer.getBoundingClientRect().top + 
+                                                      scrollContainer.scrollTop;
+
+                    const scrollToPosition = targetPositionInContainer - headerOffset - 15; // 15px padding
+
+                    scrollContainer.scrollTo({
+                        top: scrollToPosition,
+                        behavior: 'smooth'
+                    });
+
+                    if (layout && layout.MaterialLayout && typeof layout.MaterialLayout.toggleDrawer === 'function') {
+                        const drawer = document.querySelector('.mdl-layout__drawer');
+                        if (drawer && drawer.classList.contains('is-visible') && this.closest('.mdl-layout__drawer')) {
+                            layout.MaterialLayout.toggleDrawer();
+                        }
+                    }
+                } else {
+                    if (!targetElement) console.error("Target element not found for:", targetId);
+                    if (!scrollContainer) console.error("Scroll container (.mdl-layout__content) not found.");
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>
