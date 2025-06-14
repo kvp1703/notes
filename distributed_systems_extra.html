@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Introduction to Distributed Systems</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Fira+Code:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .mdl-layout__header {
+            background-color: #3f51b5; /* Indigo */
+            color: white;
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+        }
+
+        .mdl-layout__header .mdl-layout-title {
+            font-size: 1.8em;
+        }
+
+        .mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
+            font-size: 1em;
+            color: #424242;
+            padding: 12px 16px;
+        }
+         .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+            background-color: #e8eaf6; /* Light indigo */
+        }
+        .mdl-layout__drawer .mdl-navigation__link.active {
+            font-weight: bold;
+            color: #3f51b5;
+            background-color: #e8eaf6;
+        }
+
+        .page-content {
+            padding: 20px;
+            max-width: 900px;
+            margin: 20px auto;
+        }
+
+        .mdl-card {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+        }
+
+        section[id] {
+             scroll-margin-top: 80px;
+        }
+
+        .mdl-card__supporting-text {
+            color: #333;
+            font-size: 1.05em;
+        }
+        .mdl-card__title-text {
+            font-size: 2em;
+            font-weight: 500;
+        }
+        .mdl-card__title {
+            padding-bottom: 8px;
+        }
+
+        h2, h3, h4 {
+            color: #303f9f; /* Darker Indigo */
+            font-weight: 500;
+        }
+        h2 { font-size: 1.8em; border-bottom: 2px solid #c5cae9; padding-bottom: 8px; margin-top: 40px;}
+        h3 { font-size: 1.5em; }
+        h4 { font-size: 1.2em; }
+
+        pre, code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        }
+
+        pre {
+            background-color: #272822; /* Monokai-like */
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        :not(pre) > code {
+            background-color: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #c51162; /* Pink accent */
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        .toc {
+            background-color: rgba(232, 234, 246, 0.85);
+            border-left: 5px solid #3f51b5;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+        .toc ul { list-style-type: none; padding-left: 0; }
+        .toc ul li a { text-decoration: none; color: #303f9f; display: block; padding: 5px 0; transition: color 0.2s; }
+        .toc ul li a:hover { color: #1a237e; font-weight: bold; }
+
+        .note {
+            background-color: rgba(255, 249, 196, 0.85);
+            border-left: 5px solid #ffc107; /* Amber */
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .note p { margin: 0; }
+        .note strong { color: #795548; }
+
+        .diagram {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background-color: #fafafa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            line-height: 1.3;
+            font-size: 0.9em;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .dark-mode .mdl-layout__header { background-color: #1f1f1f; }
+        .dark-mode .mdl-card { background-color: rgba(40, 40, 40, 0.95); color: #e0e0e0; }
+        .dark-mode .mdl-card__supporting-text { color: #e0e0e0; }
+        .dark-mode h2, .dark-mode h3, .dark-mode h4 { color: #bb86fc; }
+        .dark-mode h2 { border-bottom-color: #3700b3; }
+        .dark-mode .toc { background-color: rgba(30, 30, 30, 0.85); border-left-color: #bb86fc; }
+        .dark-mode .toc ul li a { color: #bb86fc; }
+        .dark-mode .toc ul li a:hover { color: #cfc2ff; }
+        .dark-mode .note { background-color: rgba(50, 50, 30, 0.85); border-left-color: #fdd835; color: #e0e0e0; }
+        .dark-mode .note strong { color: #fff59d; }
+        .dark-mode :not(pre) > code { background-color: #333; color: #f06292; }
+        .dark-mode .mdl-layout__drawer { background-color: #1e1e1e; }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link { color: #bb86fc; }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover { background-color: #333; }
+        .dark-mode .mdl-layout__drawer .mdl-navigation__link.active { color: #e1d8ff; background-color: #333; }
+        .dark-mode .diagram { background-color: #2a2a2a; border-color: #555; }
+
+
+        .dark-mode-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+        <header class="mdl-layout__header">
+            <div class="mdl-layout__header-row">
+                <span class="mdl-layout-title">The Distributed Systems Handbook</span>
+                <div class="mdl-layout-spacer"></div>
+            </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <span class="mdl-layout-title">Chapters</span>
+            <nav class="mdl-navigation">
+                <a class="mdl-navigation__link" href="#intro">1. Introduction</a>
+                <a class="mdl-navigation__link" href="#core-concepts">2. Core Concepts</a>
+                <a class="mdl-navigation__link" href="#time-order">3. Time and Order</a>
+                <a class="mdl-navigation__link" href="#fault-tolerance">4. Fault Tolerance & Replication</a>
+                <a class="mdl-navigation__link" href="#consistency-concurrency">5. Consistency & Concurrency</a>
+                <a class="mdl-navigation__link" href="#cap-theorem">6. The CAP Theorem</a>
+                <a class="mdl-navigation__link" href="#consensus">7. The Art of Agreement: Consensus</a>
+                <a class="mdl-navigation__link" href="#transactions">8. Distributed Transactions</a>
+                <a class="mdl-navigation__link" href="#scaling">9. Scaling the System</a>
+                <a class="mdl-navigation__link" href="#architecture">10. Architectural Patterns</a>
+                <a class="mdl-navigation__link" href="#advanced-protocols">11. Advanced Protocols</a>
+                <a class="mdl-navigation__link" href="#byzantine">12. Byzantine Fault Tolerance</a>
+                <a class="mdl-navigation__link" href="#security">13. Security in Distributed Systems</a>
+                <a class="mdl-navigation__link" href="#case-studies">14. Case Studies</a>
+                <a class="mdl-navigation__link" href="#practical-concerns">15. Practical Implementation</a>
+                <a class="mdl-navigation__link" href="#conclusion">16. Conclusion</a>
+            </nav>
+        </div>
+        <main class="mdl-layout__content">
+            <div class="page-content">
+
+                <!-- Welcome Card -->
+                <div class="mdl-card mdl-shadow--2dp">
+                    <div class="mdl-card__title">
+                        <h1 class="mdl-card__title-text">Welcome!</h1>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>Welcome to "The Distributed Systems Handbook." This book is designed to be an easy-to-read, practical guide to the complex world of distributed systems. We'll start with the absolute basics and build our way up to advanced topics that power the largest internet services you use every day.</p>
+                        <p>Whether you're a student, a software developer, or a systems architect, this guide aims to demystify the principles, challenges, and patterns of building reliable and scalable systems. We will use simple language, diagrams, and code snippets to illustrate key ideas.</p>
+                        <p>Let's begin our journey.</p>
+                    </div>
+                </div>
+
+                <!-- Chapter 1: Introduction -->
+                <section id="intro">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-1">Chapter 1: An Introduction to a World Without a Center</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <h3>What is a Distributed System?</h3>
+                            <p>Imagine you have a massive, critical task to complete, like building a pyramid. You could hire one giant, super-strong builder to do everything. This is a <strong>centralized system</strong>. It's simple to manage—you only talk to one builder. But what happens if that builder gets sick? Or if the pyramid becomes too big for one builder to handle? The whole project stops.</p>
+
+                            <div class="note">
+                                <p><strong>Definition:</strong> A <strong>distributed system</strong> is a collection of independent computers (called <strong>nodes</strong>) that appear to its users as a single, coherent system. These nodes communicate with each other by passing messages over a network.</p>
+                            </div>
+
+                            <p>Now, imagine hiring thousands of regular builders. Each builder is a node. They must coordinate, pass stones (messages) to each other, and work together. This is a <strong>distributed system</strong>. It's more complex to manage, but you can build a much bigger pyramid (<strong>scalability</strong>), and if one builder gets sick, the others can continue working (<strong>fault tolerance</strong>).</p>
+
+                            <h4>Centralized vs. Distributed Systems</h4>
+                            <div class="diagram">
+<pre>
+    Centralized System                    Distributed System
+
+        [ User ]                              [ User ]
+           |                                     |
+           |                                [ Load Balancer ]
+           |                                /      |      \
+     [ Mainframe/Server ]                  /       |       \
+     (Single Point of Failure)    [ Node 1 ]--[ Node 2 ]--[ Node 3 ]
+                                     |           |           |
+                                  (Shared State / Communication)
+</pre>
+                            </div>
+
+                            <h3>Why Do We Need Them? The Benefits</h3>
+                            <p>Distributed systems are not just a computer science curiosity; they are a necessity for the modern internet. They solve critical problems that centralized systems cannot.</p>
+                            <ul>
+                                <li><strong>Scalability:</strong> You can increase the system's capacity by simply adding more nodes. This is called <strong>horizontal scaling</strong> and is often more cost-effective than making a single machine more powerful (<strong>vertical scaling</strong>).</li>
+                                <li><strong>Fault Tolerance & High Availability:</strong> If one node fails, the system as a whole can continue to operate. By replicating data and functionality across multiple nodes, we can build systems that are available 24/7, even in the face of hardware failures.</li>
+                                <li><strong>Performance/Latency:</strong> By placing nodes geographically closer to users, we can reduce network latency and improve response times. A user in Tokyo can be served by a data center in Japan, while a user in New York is served by one in Virginia.</li>
+                                <li><strong>Resource Sharing:</strong> Expensive or specialized resources like high-performance printers, large datasets, or powerful compute engines can be shared among many users and applications across the network.</li>
+                            </ul>
+
+                            <h3>The Major Challenges</h3>
+                            <p>The benefits of distributed systems come at a cost. The complexity of managing many moving parts introduces unique and difficult challenges:</p>
+                            <ul>
+                                <li><strong>Partial Failure:</strong> In a single application, a failure is usually total—the program crashes. In a distributed system, one node might fail while others continue. The system is in a state of partial failure, which is incredibly difficult to reason about and handle.</li>
+                                <li><strong>Concurrency:</strong> Multiple clients are accessing shared resources on multiple nodes at the same time. How do you ensure operations happen in a predictable order and don't corrupt data?</li>
+                                <li><strong>No Global Clock:</strong> Each computer has its own clock, and these clocks are never perfectly synchronized. This makes it impossible to know the absolute order of events across the system. This single fact is the root of many other challenges.</li>
+                                <li><strong>Network Unreliability:</strong> Messages can be lost, delayed, reordered, or duplicated. You can't assume that sending a message means it will be received, or that you'll receive a reply.</li>
+                                <li><strong>Security:</strong> With data flowing across a network and multiple points of entry, securing a distributed system is far more complex than securing a single machine.</li>
+                            </ul>
+
+                            <h3>Real-World Examples</h3>
+                            <p>You use distributed systems every day:</p>
+                            <ul>
+                                <li><strong>The World Wide Web:</strong> The ultimate distributed system. Web servers, DNS servers, and client browsers all work together.</li>
+                                <li><strong>Google Search:</strong> An incoming query is sent to thousands of machines that search a portion of the web index and aggregate the results.</li>
+                                <li><strong>Netflix:</strong> Video content is stored on servers (AWS) distributed globally. When you press play, you stream from a server close to you.</li>
+                                <li><strong>Cryptocurrencies like Bitcoin:</strong> A decentralized network of nodes maintains a shared ledger (the blockchain) without any central authority.</li>
+                                <li><strong>Online Banking:</strong> Your account information is replicated across multiple data centers to ensure it's never lost and is always available.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 2: Core Concepts -->
+                <section id="core-concepts">
+                     <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-2">Chapter 2: The Building Blocks</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Before we dive into the deep end, let's understand some foundational concepts that define how distributed systems are built and perceived.</p>
+
+                            <h3>Communication: The Lifeblood of the System</h3>
+                            <p>Nodes in a distributed system are useless unless they can communicate. The primary mechanism for this is <strong>message passing</strong>. One node packages up data into a message and sends it over the network to another node.</p>
+
+                            <div class="note">
+                                <p><strong>Message Passing:</strong> A form of communication where processes or nodes exchange information by sending and receiving messages, without sharing the same memory space.</p>
+                            </div>
+
+                            <p>Communication can generally be categorized into two modes: synchronous and asynchronous.</p>
+
+                            <h4>Synchronous vs. Asynchronous Communication</h4>
+                            <p><strong>Synchronous (Blocking):</strong> When a node sends a message, it stops and waits for a response. Think of making a phone call—you wait for the other person to answer and finish the conversation before you can do something else.</p>
+
+                            <div class="diagram">
+<pre>
+Client                      Server
+  |                           |
+  |--- send(request) -------->|
+  | (blocks, waiting)         | process request...
+  |                           |
+  |<-- receive(response) -----|
+  | (unblocks, continues)     |
+  |                           |
+</pre>
+                            </div>
+                            <pre><code class="language-python">
+# Synchronous - the function waits for the result
+def get_user_data(user_id):
+    # This call blocks until the server responds
+    response = http_library.get(f"https://api.example.com/users/{user_id}")
+    return response.json()
+                            </code></pre>
+                            <p><strong>Pros:</strong> Simpler to program and reason about. The flow of control is linear.
+                            <br><strong>Cons:</strong> Can be inefficient. The client is stuck waiting and can't do other work. If the server is slow or down, the client is blocked indefinitely.</p>
+
+                            <p><strong>Asynchronous (Non-Blocking):</strong> When a node sends a message, it immediately continues with its work. It gets notified later when a response arrives (e.g., via a callback function, a promise, or by checking a message queue).</p>
+
+                            <div class="diagram">
+<pre>
+Client                      Server
+  |                           |
+  |--- send(request) -------->|
+  | (continues work...)       | process request...
+  |                           |
+  |                           |
+  | (later...)                |
+  |<-- handle_response() <----|
+  |                           |
+</pre>
+                            </div>
+                            <pre><code class="language-python">
+# Asynchronous - using a callback
+def get_user_data_async(user_id, callback):
+    # This call returns immediately
+    http_library.get_async(f"https://api.example.com/users/{user_id}",
+                           on_complete=callback)
+
+def process_user_data(response):
+    print("Response received:", response.json())
+
+# The program doesn't block here
+get_user_data_async(123, process_user_data)
+print("Request sent, but I'm already doing other things!")
+                            </code></pre>
+                            <p><strong>Pros:</strong> Much more efficient and scalable. Allows for high concurrency.
+                            <br><strong>Cons:</strong> More complex to program. Can lead to "callback hell" and makes reasoning about the program flow harder.</p>
+
+                            <h3>Transparency: Hiding the Complexity</h3>
+                            <p>A major goal of distributed system design is <strong>transparency</strong>: hiding the fact that the system is distributed across multiple computers. The system should appear to the user as a single, ordinary computer.</p>
+                            <div class="note">
+                                <p><strong>Transparency:</strong> The concealment of the separation of components in a distributed system from the user and application programmer.</p>
+                            </div>
+                            <p>There are several types of transparency:</p>
+                            <ul>
+                                <li><strong>Access Transparency:</strong> Users access local and remote resources using the same operations (e.g., reading a file on a local disk vs. a remote file system).</li>
+                                <li><strong>Location Transparency:</strong> Users don't know where a resource is physically located. A name like `/users/data/file.txt` doesn't reveal the server's IP address.</li>
+                                <li><strong>Failure Transparency:</strong> The system automatically recovers from node or network failures without the user noticing (e.g., by retrying a request on a backup server).</li>
+                                <li><strong>Migration Transparency:</strong> Resources can be moved from one node to another without affecting users.</li>
+                                <li><strong>Scalability Transparency:</strong> The system can scale to handle more load without changing the system's structure from the user's perspective.</li>
+                            </ul>
+
+                            <h3>The Role of Middleware</h3>
+                            <p>Achieving transparency is hard. This is where <strong>middleware</strong> comes in. Middleware is a layer of software that sits between the operating system and the application layer, providing common services and abstracting away the complexity of the distributed environment.</p>
+                            <div class="diagram">
+<pre>
++---------------------------------+  +---------------------------------+
+|          Application            |  |          Application            |
++---------------------------------+  +---------------------------------+
+|             MIDDLEWARE          |  |             MIDDLEWARE          |  <-- Provides transparency
++---------------------------------+  +---------------------------------+
+|        Operating System         |  |        Operating System         |
++---------------------------------+  +---------------------------------+
+             (Node 1)                           (Node 2)
+</pre>
+                            </div>
+                            <p>Examples of middleware include:
+                            <ul>
+                                <li><strong>Message Queues (e.g., RabbitMQ, Kafka):</strong> Facilitate asynchronous communication.</li>
+                                <li><strong>Object Request Brokers (ORBs):</strong> Allow objects to make requests to other objects located on different machines.</li>
+                                <li><strong>Database Connectors:</strong> Hide the details of connecting to and querying a remote database.</li>
+                            </ul>
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 3: Time and Order -->
+                <section id="time-order">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-3">Chapter 3: The Tyranny of Time</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <h3>The Problem: No Global Clock</h3>
+                            <p>One of the most profound and challenging aspects of distributed systems is the <strong>absence of a global clock</strong>. Each node has its own physical clock, but minute variations in their crystal oscillators (a phenomenon called "clock skew") cause them to drift apart. Furthermore, network latency is variable and unpredictable. If Node A sends a message to Node B, you don't know precisely how long it took to arrive.</p>
+                            <p>This means you cannot use timestamps to definitively say "event X on Node A happened before event Y on Node B." This uncertainty makes ordering events a fundamental problem.</p>
+
+                            <h3>Lamport Clocks: Creating a Logical Order</h3>
+                            <p>Leslie Lamport realized that we don't always need to know the exact physical time of events. Often, we just need to agree on their <strong>causal ordering</strong>. If event A could have caused event B, then A must be ordered before B. Lamport Clocks provide this logical ordering.</p>
+                            <div class="note">
+                                <p><strong>Lamport Clock Rule:</strong> A simple counter on each node that is updated based on two rules:
+                                <ol>
+                                    <li>Increment the counter before each local event.</li>
+                                    <li>When sending a message, include the counter's value. When receiving a message, set your local counter to `max(local_counter, received_counter) + 1`.</li>
+                                </ol>
+                                </p>
+                            </div>
+
+                            <div class="diagram">
+<pre>
+Node A:  ---(e1, T=1)---M1(T=1)--->--(e2, T=3)---
+                  \                  /
+                   \                /
+Node B:  ------------\---M1_recv(T=2)---
+                      \
+                       \
+Node C:  ---(e3, T=1)---M2(T=1)--->--(e4, T=2)---
+
+Events:
+e1 @ A: T_A becomes 1. Sends M1 with T=1.
+M1 recv @ B: B's clock is 0. max(0, 1) + 1 = 2. T_B becomes 2.
+e2 @ A: T_A becomes 2. Sends M2 with T=2 (not shown)
+e3 @ C: T_C becomes 1.
+M1 arrives at A from B? (not shown)
+e2 @ A: A's local clock is 1. T_A becomes 2. Receives a message from B with T=2. T_A becomes max(2,2)+1 = 3.
+</pre>
+                            </div>
+                            <p>Lamport clocks give us a "happened-before" relationship (`A -> B`), but they have a limitation. If `T(A) < T(B)`, it doesn't necessarily mean A happened before B; they could be concurrent. We can't distinguish.</p>
+
+                            <h3>Vector Clocks: Detecting Concurrency</h3>
+                            <p>Vector clocks are an enhancement to Lamport clocks that solve this problem. Instead of a single counter, each node maintains a vector (an array) of counters, one for each node in the system.</p>
+                            <div class="note">
+                                <p><strong>Vector Clock Rule:</strong>
+                                <ol>
+                                    <li>Before a local event, increment the node's own counter in its vector.</li>
+                                    <li>When sending a message, include the entire vector.</li>
+                                    <li>When a node `P_i` receives a message with vector `V` from `P_j`, it first increments its own clock `VC_i[i]`. Then, for every element `k` in the vector, it updates its local vector `VC_i[k] = max(VC_i[k], V[k])`.</li>
+                                </ol>
+                                </p>
+                            </div>
+
+                            <div class="diagram">
+<pre>
+Node A (VC_A): [0,0,0] -> [1,0,0] --M1([1,0,0])-->
+                                                    \
+Node B (VC_B): [0,0,0] -> --------------------------> [1,1,0] --M2([1,1,0])-->
+                                                                        \
+Node C (VC_C): [0,0,0] -> -----------------------------------------------> [1,1,1]
+
+Events:
+1. Event at A: VC_A becomes [1,0,0]. Sends M1.
+2. B receives M1: VC_B[1]++. VC_B becomes [0,1,0]. Then merges:
+   VC_B[0] = max(0, 1) = 1
+   VC_B[1] = max(1, 0) = 1
+   VC_B[2] = max(0, 0) = 0
+   Final VC_B is [1,1,0]. Sends M2.
+3. C receives M2: VC_C[2]++. VC_C becomes [0,0,1]. Then merges:
+   VC_C becomes [max(0,1), max(0,1), max(1,0)] = [1,1,1].
+
+If A has [1,0,0] and B has [0,1,0], we know they are concurrent because neither is strictly greater than the other.
+</pre>
+                            </div>
+                            <p>Vector clocks allow us to definitively say whether one event happened before another, or if they happened concurrently. This is invaluable for resolving data conflicts in databases and file systems.</p>
+
+                            <h4>Clock Synchronization</h4>
+                            <p>While logical clocks are great for ordering, sometimes you need clocks that are roughly synchronized with real-world time. This is achieved using protocols like the <strong>Network Time Protocol (NTP)</strong>. NTP allows a computer to synchronize its clock with a highly accurate time source over the network. Google's Spanner database uses a more advanced system called <strong>TrueTime</strong> which uses GPS and atomic clocks to provide a synchronized time with a known, bounded uncertainty.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 4: Fault Tolerance -->
+                <section id="fault-tolerance">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-4">Chapter 4: Planning for Failure</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                           <h3>What is Fault Tolerance?</h3>
+                            <p>A core promise of distributed systems is their ability to withstand failures. <strong>Fault tolerance</strong> is the property that enables a system to continue operating properly in the event of the failure of some of its components.</p>
+                            <p>The Need: In a system with hundreds or thousands of nodes, the probability of a single node failing at any given time is close to 100%. If your system can't handle that, it's not a reliable system. Failures are the norm, not the exception.</p>
+
+                            <h3>Handling Failures and Recovery</h3>
+                            <p>The first step is <strong>failure detection</strong>. This is often done using a <strong>heartbeat</strong> mechanism. Node A periodically sends a small "I'm alive" message to Node B. If Node B doesn't receive a heartbeat from A for a certain period, it marks A as "down."</p>
+                            <p>Once a failure is detected, the system must recover. The primary technique for achieving fault tolerance is <strong>redundancy</strong>, which is most commonly implemented through <strong>data replication</strong>.</p>
+
+                            <h3>Data Replication: The Cornerstone of Reliability</h3>
+                            <p><strong>The Problem it Solves:</strong> If data exists on only one node and that node fails, the data is lost forever. Replication solves this by keeping copies (replicas) of the data on multiple nodes.</p>
+
+                            <div class="note">
+                                <p><strong>Data Replication:</strong> The process of storing the same data on multiple storage devices to ensure redundancy and availability.</p>
+                            </div>
+
+                            <div class="diagram">
+<pre>
+No Replication:                         With Replication:
+
+[ Client ] --write(X=5)--> [ Node A ]    [ Client ] --write(X=5)--> [ Coordinator ]
+          (Node A fails, X is lost)                                     /      \
+                                                         replicate(X=5)  |        |  replicate(X=5)
+                                                                        v        v
+                                                                    [ Node A ] [ Node B ]
+                                                                    (Node A fails, but X=5
+                                                                     is safe on Node B)
+</pre>
+                            </div>
+                            <p>Replication provides two key benefits:</p>
+                            <ul>
+                                <li><strong>Reliability:</strong> If one node with a data replica fails, the data can be served from another replica.</li>
+                                <li><strong>Performance:</strong> Read requests can be served from the closest replica, reducing latency.</li>
+                            </ul>
+
+                            <h4>Synchronous vs. Asynchronous Replication</h4>
+                            <p>Just like communication, replication can be synchronous or asynchronous, creating a crucial trade-off.</p>
+                            <p><strong>Synchronous Replication:</strong> The primary node waits for all (or a quorum of) replicas to confirm they have received the write before acknowledging success to the client.
+                            <br><strong>Trade-offs:</strong> Guarantees strong consistency (all replicas are in sync). However, it's slow because the client has to wait for the slowest replica. It also reduces availability; if a replica is down, the write might fail.</p>
+
+                            <p><strong>Asynchronous Replication:</strong> The primary node acknowledges the write to the client immediately and then propagates the change to replicas in the background.
+                            <br><strong>Trade-offs:</strong> Fast writes and high availability. The downside is a window of data loss if the primary fails before the change is replicated. It also leads to <strong>eventual consistency</strong>, where replicas might be out of sync for a short time.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 5: Consistency and Concurrency -->
+                <section id="consistency-concurrency">
+                     <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-5">Chapter 5: Keeping Everyone on the Same Page</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <h3>The Challenge of Concurrency</h3>
+                            <p>In a distributed system, multiple clients are constantly reading and writing data on multiple nodes. This is <strong>concurrency</strong>. The challenge is to manage this concurrent access so that the data remains correct and predictable.</p>
+                            <p>Consider a simple bank account balance. If two people try to withdraw money from the same account at the exact same time from different ATMs (nodes), how do you prevent the account from being overdrawn?</p>
+
+                            <h3>Data Consistency Models</h3>
+                            <p>A <strong>consistency model</strong> is a contract between the system and the programmer. It specifies the rules for the visibility and ordering of updates. It answers the question: "If I write a value, when will other clients see it?"</p>
+
+                            <h4>Strong Consistency (Linearizability)</h4>
+                            <p>This is the most intuitive and strictest model. It behaves as if there is only one copy of the data and all operations are executed on it in some sequential order.</p>
+                            <div class="note">
+                                <p><strong>Strong Consistency:</strong> Any read will return the value of the most recent successful write. All clients see the same, single, up-to-date version of the data.</p>
+                            </div>
+                            <p><strong>Analogy:</strong> Imagine a single shared document on a whiteboard. Anyone who looks at it sees the very latest version. If two people try to write at the same time, one will go first, and the second person will see the first person's change before making their own.</p>
+                            <p><strong>Pro:</strong> Easy to reason about. <strong>Con:</strong> Slow and can have low availability, as it requires coordination (e.g., synchronous replication or locking) between nodes.</p>
+
+                            <h4>Eventual Consistency</h4>
+                            <p>This is a much weaker model, but it is often used in highly available systems.</p>
+                             <div class="note">
+                                <p><strong>Eventual Consistency:</strong> If no new updates are made to a given data item, all replicas will eventually converge to the same value. However, for a period of time, reads might return stale data.</p>
+                            </div>
+                            <p><strong>Analogy:</strong> Imagine editing a Wikipedia page. You make an edit, and it's saved. For a few seconds or minutes, users around the world might still see the old version from their local cache. Eventually, everyone's cache will update, and they will see your change.</p>
+                            <p><strong>Pro:</strong> High availability and low latency for writes. <strong>Con:</strong> More complex for developers to handle, as they must account for the possibility of reading stale data.</p>
+                            <p>Eventual consistency is often achieved through techniques like <strong>read repair</strong> (fixing inconsistencies when data is read) and <strong>write repair</strong> (fixing them during the write process), commonly found in systems like Cassandra.</p>
+
+                            <h4>Linearizability vs. Serializability</h4>
+                            <p>These are two strong consistency models that are often confused.</p>
+                            <ul>
+                                <li><strong>Linearizability</strong> is a property of a single operation on a single object. It's about real-time ordering. If operation A completes before operation B begins, then B must see the effects of A.</li>
+                                <li><strong>Serializability</strong> is a property of a group of operations (a transaction). It guarantees that the result of running transactions concurrently is the same as if they were run one at a time (serially) in some order. It doesn't care about real-time ordering, only that the outcome is valid.</li>
+                            </ul>
+                            <p>In short, linearizability is stronger than serializability. All linearizable schedules are serializable, but not all serializable schedules are linearizable.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 6: The CAP Theorem -->
+                <section id="cap-theorem">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-6">Chapter 6: The Inescapable Trade-off - CAP Theorem</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <h3>What is the CAP Theorem?</h3>
+                            <p>In 2000, Professor Eric Brewer conjectured that it is impossible for a distributed data store to simultaneously provide more than two of the following three guarantees. This was later formally proven and is now known as the <strong>CAP Theorem</strong>.</p>
+                            <div class="note">
+                                <p><strong>The CAP Theorem Guarantees:</strong>
+                                <ul>
+                                    <li><strong>Consistency (C):</strong> Every read receives the most recent write or an error (i.e., strong consistency).</li>
+                                    <li><strong>Availability (A):</strong> Every request receives a (non-error) response, without the guarantee that it contains the most recent write.</li>
+                                    <li><strong>Partition Tolerance (P):</strong> The system continues to operate despite an arbitrary number of messages being dropped (or delayed) by the network between nodes (a "network partition").</li>
+                                </ul>
+                                </p>
+                            </div>
+
+                            <h3>The Implication: You Must Choose Two out of Three</h3>
+                            <p>The core of the theorem is this: when a network partition happens, you have a choice to make.</p>
+                            <div class="diagram">
+<pre>
+           [ C ]onsistency
+             / \
+            /   \
+           /     \
+   [ A ]vailability --- [ P ]artition Tolerance
+
+Imagine a network partition splits your system into two halves, P1 and P2.
+A write request arrives at P1.
+
+          [ Client ]
+              |
+          write(X=5)
+              |
+              v
+[ G1: Node A, Node B ]  <--- NETWORK PARTITION ---> [ G2: Node C, Node D ]
+(X is now 5 here)                                  (X is still 4 here)
+
+Now, a read request for X arrives at G2. What should G2 do?
+
+1. **Choose Consistency over Availability (CP):** To be consistent, G2 must return the latest value of X, which is 5. But it can't contact G1 to find out. So, it must return an error or not respond. It sacrifices Availability to maintain Consistency.
+
+2. **Choose Availability over Consistency (AP):** To be available, G2 must respond. The only value it knows for sure is its local, stale value of 4. It returns 4, sacrificing Consistency to maintain Availability.
+</pre>
+                            </div>
+                            <p>What about CA? A system that is not partition-tolerant. This is possible, but it means you assume the network is 100% reliable. In a wide-area distributed system, this is not a realistic assumption. Therefore, for most distributed systems, P is a given, and the real trade-off is between C and A.</p>
+
+                            <h3>CAP in Real-World Systems</h3>
+                            <ul>
+                                <li><strong>CP (Consistency & Partition Tolerance):</strong> Systems that must guarantee correctness above all else. Examples include traditional relational databases like a sharded PostgreSQL, or systems like Google's Spanner and Chubby. When a partition occurs, they may become unavailable until it's resolved.</li>
+                                <li><strong>AP (Availability & Partition Tolerance):** Systems that must remain available even if it means serving stale data. This is common for services where uptime is critical. Examples include Amazon's DynamoDB and Cassandra. They prioritize responding to requests and handle inconsistencies later.</li>
+                                <li><strong>CA (Consistency & Availability):</strong> A non-distributed, single-site database (like a standard MySQL server). It is consistent and available, but if the network link to it fails, it has no partition tolerance.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 7: Consensus -->
+                <section id="consensus">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-7">Chapter 7: The Art of Agreement: Consensus</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <h3>The Consensus Problem</h3>
+                            <p>How does a group of nodes agree on a single value? This is the fundamental <strong>consensus problem</strong>. It's crucial for many tasks:</p>
+                            <ul>
+                                <li><strong>Leader Election:</strong> Agreeing on which node is the current leader.</li>
+                                <li><strong>Distributed Transactions:</strong> Agreeing on whether to commit or abort a transaction.</li>
+                                <li><strong>State Machine Replication:</strong> Agreeing on the order of operations to apply to a replicated data store.</li>
+                            </ul>
+                            <p>The system must satisfy three properties:
+                            <ol>
+                                <li><strong>Agreement:</strong> All non-faulty nodes agree on the same value.</li>
+                                <li><strong>Validity:</strong> If all nodes propose the same value V, then they must decide on V.</li>
+                                <li><strong>Termination:</strong> All non-faulty nodes eventually decide on a value.</li>
+                            </ol>
+                            </p>
+
+                            <h3>The FLP Impossibility Result</h3>
+                            <p>Before we look at solutions, we must face a harsh reality. The <strong>FLP Impossibility Result</strong> (named after Fischer, Lynch, and Paterson) proved that in a fully <strong>asynchronous</strong> system (where message delays are unbounded), there is no deterministic algorithm that can solve the consensus problem if even a single process might crash.</p>
+                            <p>This sounds devastating, but in practice, we can build systems that solve consensus by using timeouts and other mechanisms to circumvent the "fully asynchronous" assumption. We assume that messages, while they can be slow, will usually get through in a reasonable amount of time.</p>
+
+                            <h3>Paxos: The Foundational Algorithm</h3>
+                            <p>Paxos, described by Leslie Lamport, was the first provably correct consensus algorithm for asynchronous systems that can tolerate crash failures. It's famously difficult to understand but forms the basis for many real-world systems.</p>
+                            <p><strong>Roles:</strong>
+                            <ul>
+                                <li><strong>Proposer:</strong> Suggests a value.</li>
+                                <li><strong>Acceptor:</strong> Votes on proposed values. A majority of acceptors forms a <strong>quorum</strong>.</li>
+                                <li><strong>Learner:</strong> Learns the final, decided value.</li>
+                            </ul></p>
+                            <p><strong>The Two-Phase Protocol:</strong>
+                            <ol>
+                                <li><strong>Phase 1: Prepare/Promise</strong>
+                                    <ul>
+                                        <li>A Proposer chooses a proposal number `N` and sends a `prepare(N)` request to a quorum of Acceptors.</li>
+                                        <li>An Acceptor receives `prepare(N)`. If `N` is higher than any proposal number it has seen before, it promises not to accept any future proposals with a number less than `N` and responds with the highest-numbered proposal it has already accepted (if any).</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Phase 2: Propose/Accepted</strong>
+                                    <ul>
+                                        <li>If the Proposer receives promises from a quorum of Acceptors, it sends an `accept(N, V)` request to them. The value `V` is either its own proposed value or the value from the highest-numbered proposal returned by the Acceptors in Phase 1.</li>
+                                        <li>An Acceptor receives `accept(N, V)`. If it hasn't made a promise for a higher proposal number, it accepts the proposal `(N, V)`.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            A value is chosen once a quorum of Acceptors has accepted it.</p>
+
+                            <h3>Raft: Consensus Made Understandable</h3>
+                            <p>While Paxos is powerful, its complexity led researchers at Stanford to design <strong>Raft</strong>, an algorithm that is equivalent in fault-tolerance but much easier to understand and implement.</p>
+                            <p>Raft's key idea is to decompose consensus into three simpler subproblems:</p>
+                            <ol>
+                                <li><strong>Leader Election:</strong> One node is elected as the leader. The leader is solely responsible for managing the replicated log.</li>
+                                <li><strong>Log Replication:</strong> The leader accepts commands from clients, appends them to its log, and replicates the log to other nodes (followers).</li>
+                                <li><strong>Safety:</strong> Ensures that if a leader has applied a command to its state machine, no other leader can overwrite that command.</li>
+                            </ol>
+
+                            <h4>How Leader Election Works in Raft</h4>
+                            <p>Raft uses heartbeats and timeouts for leader election.
+                            <ul>
+                                <li>Nodes are in one of three states: <strong>Follower, Candidate, or Leader</strong>.</li>
+                                <li>All nodes start as Followers. If a Follower doesn't hear from a leader within a certain random timeout, it transitions to a Candidate.</li>
+                                <li>As a Candidate, it increments its term number, votes for itself, and sends `RequestVote` RPCs to all other nodes.</li>
+                                <li>It remains a Candidate until one of three things happens:
+                                    <ol>
+                                        <li>It wins the election by getting votes from a majority of nodes and becomes the Leader.</li>
+                                        <li>Another node establishes itself as the Leader. The Candidate sees the new leader's heartbeat and transitions back to a Follower.</li>
+                                        <li>A period of time goes by with no winner (a split vote). The Candidate times out and starts a new election.</li>
+                                    </ol>
+                                </li>
+                            </ul></p>
+
+                            <div class="diagram">
+<pre>
+                      +-------------------+
+                      |      Starts up      |
+                      +-------------------+
+                              |
+                              v
++-----------------------------------------------------------------+
+|                         +-----------+                           |
+|                         | Follower  |                           |
+|                         +-----------+                           |
+|                                |                                |
+|           Receives RPC from new leader / Discovers current term |
+|                                |                                |
+|        +-----------------------+------------------------+       |
+|        |                                                |       |
+|        v                                                v       |
+| +------------+  Times out, starts election  +-------------+     |
+| | Candidate  | ---------------------------> |   Leader    |     |
+| +------------+  Gets votes from majority   +-------------+     |
+|        ^      of servers                          |             |
+|        |                                          |             |
+|        +------------------------------------------+             |
+|                Discovers leader or new term                     |
++-----------------------------------------------------------------+
+</pre>
+                            </div>
+
+                            <p><strong>Raft vs. Paxos:</strong> Raft is less flexible than Paxos (it enforces a specific leader-based approach), but this constraint makes it far simpler. Most new systems today prefer to implement Raft over Paxos due to its understandability. Paxos, Raft, and Zab (used by Zookeeper) are all consensus algorithms with different trade-offs in performance and complexity but similar fault-tolerance characteristics.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 8: Distributed Transactions -->
+                <section id="transactions">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-8">Chapter 8: All or Nothing - Distributed Transactions</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>A transaction is a sequence of operations that must be executed as a single, atomic unit. Either all operations succeed (commit), or none of them do (abort). How do you achieve this when the operations are spread across multiple, independent databases or services?</p>
+
+                            <h3>Two-Phase Commit (2PC)</h3>
+                            <p>The classic algorithm for coordinating distributed transactions is the <strong>Two-Phase Commit (2PC)</strong> protocol.</p>
+                            <p><strong>The Need:</strong> Imagine transferring money from an account in Bank A to an account in Bank B. You need to debit Bank A and credit Bank B. If the debit succeeds but the credit fails, money is lost. 2PC ensures both operations either commit or abort together.</p>
+
+                            <p><strong>The Players:</strong>
+                            <ul>
+                                <li><strong>Coordinator:</strong> The node that manages the transaction.</li>
+                                <li><strong>Participants (or Cohorts):</strong> The nodes that are executing parts of the transaction (e.g., the two banks' databases).</li>
+                            </ul></p>
+
+                            <p><strong>The Two Phases:</strong>
+                            <ol>
+                                <li><strong>Phase 1: Voting Phase (or Prepare Phase)</strong>
+                                    <ul>
+                                        <li>The Coordinator sends a `PREPARE` message to all Participants.</li>
+                                        <li>Each Participant checks if it can perform its part of the transaction. It writes the necessary changes to a temporary log, and if it's ready, it responds with a `VOTE_COMMIT` message. If it cannot, it responds with `VOTE_ABORT`.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Phase 2: Commit Phase</strong>
+                                    <ul>
+                                        <li><strong>If the Coordinator receives `VOTE_COMMIT` from ALL Participants:</strong> It decides to commit. It sends a `GLOBAL_COMMIT` message to all Participants. Participants then make their changes permanent.</li>
+                                        <li><strong>If the Coordinator receives even ONE `VOTE_ABORT` (or a timeout):</strong> It decides to abort. It sends a `GLOBAL_ABORT` message to all Participants. Participants then discard their changes from the temporary log.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            </p>
+
+                            <div class="diagram">
+<pre>
+Phase 1: Voting
+Coordinator             Participant 1             Participant 2
+    |                         |                         |
+    |------- PREPARE ------> |                         |
+    |----------------------- PREPARE ----------------->|
+    |                         | (persists to log)       | (persists to log)
+    |<------ VOTE_COMMIT ----|                         |
+    |<---------------------- VOTE_COMMIT --------------|
+    |                         |                         |
+
+Phase 2: Commit
+Coordinator             Participant 1             Participant 2
+    | (decision logged)       |                         |
+    |------- COMMIT -------> |                         |
+    |----------------------- COMMIT ----------------->|
+    |                         | (commits)               | (commits)
+    |<------ ACK ----------- |                         |
+    |<---------------------- ACK ----------------------|
+    | (completes)             |                         |
+</pre>
+                            </div>
+
+                            <h3>Limitations of 2PC</h3>
+                            <p>While it works, 2PC has significant drawbacks:</p>
+                            <ul>
+                                <li><strong>Blocking:</strong> It's a synchronous, blocking protocol. Participants must wait for the Coordinator's decision.</li>
+                                <li><strong>Single Point of Failure:</strong> The Coordinator is a SPOF. If it crashes after Phase 1 but before sending the final decision, the Participants are left in a "pending" state and don't know whether to commit or abort. They are blocked until the Coordinator recovers, potentially holding database locks for a long time. This is a major availability issue.</li>
+                            </ul>
+                            <p>Due to these issues, many modern systems try to avoid distributed transactions and 2PC, preferring alternative patterns like <strong>Sagas</strong>, which rely on a series of local transactions that can be compensated for if one fails.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 9: Scaling -->
+                <section id="scaling">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-9">Chapter 9: Growing Pains - Scaling the System</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>As your user base grows, your system must handle more traffic. This is the challenge of <strong>scalability</strong>. There are two fundamental ways to scale.</p>
+
+                            <h3>Vertical vs. Horizontal Scaling</h3>
+                            <p><strong>Vertical Scaling (Scaling Up):</strong> Making a single server more powerful. You add more CPU, more RAM, or faster disks.
+                            <br><strong>Pros:</strong> Simple, no code changes needed.
+                            <br><strong>Cons:</strong> There's a physical limit to how big one machine can get. It's very expensive at the high end, and you still have a single point of failure.</p>
+
+                            <p><strong>Horizontal Scaling (Scaling Out):</strong> Adding more servers to your pool of resources. This is the heart of distributed systems.
+                            <br><strong>Pros:</strong> Theoretically limitless scalability. More cost-effective. Fosters fault tolerance.
+                            <br><strong>Cons:</strong> Increases architectural complexity.</p>
+
+                            <h3>Load Balancing</h3>
+                            <p>When you have multiple servers, how do you distribute incoming requests among them? This is the job of a <strong>load balancer</strong>.</p>
+                            <div class="note">
+                                <p><strong>Load Balancing:</strong> The process of distributing network traffic across multiple servers to ensure no single server bears too much load. This improves responsiveness and availability.</p>
+                            </div>
+                            <div class="diagram">
+<pre>
+[ User 1 ] ---->
+[ User 2 ] ----> [ Load Balancer ] ----> [ Web Server 1 ]
+[ User 3 ] ---->                     |
+[ User 4 ] ---->                     |--> [ Web Server 2 ]
+                                     |
+                                     |--> [ Web Server 3 ]
+</pre>
+                            </div>
+                            <p>Common load balancing strategies include Round Robin, Least Connections, and IP Hashing.</p>
+
+                            <h3>Partitioning and Sharding</h3>
+                            <p>When your data becomes too large to fit on a single server, you must split it across multiple servers. This is called <strong>partitioning</strong> or <strong>sharding</strong>.</p>
+
+                            <div class="note">
+                                <p><strong>Sharding:</strong> A type of database partitioning that separates very large databases into smaller, faster, more easily managed parts called data shards.</p>
+                            </div>
+
+                            <p><strong>How it works:</strong> You choose a "shard key" (e.g., `user_id`, `zip_code`). A function then maps each key to a specific shard (server). For example, `shard = hash(user_id) % num_shards`.</p>
+                            <div class="diagram">
+<pre>
+          +-----------------+
+          | User Database   |
+          | (Too big for    |
+          | one server)     |
+          +-----------------+
+                  |
+         (Partition by UserID)
+                  |
+     +------------+-------------+
+     |            |             |
+     v            v             v
++----------+ +----------+ +----------+
+| Shard 1  | | Shard 2  | | Shard 3  |
+| Users    | | Users    | | Users    |
+| 1-1000   | | 1001-2000| | 2001-3000|
++----------+ +----------+ +----------+
+</pre>
+                            </div>
+
+                            <h3>Consistent Hashing and DHTs</h3>
+                            <p>The simple `hash(key) % N` approach to sharding has a major flaw: if you add or remove a server (changing `N`), almost every key maps to a new server. This requires a massive, disruptive data reshuffle.</p>
+                            <p><strong>Consistent Hashing</strong> solves this.
+                            <br><strong>How it works:</strong> Instead of a linear mapping, keys and servers are mapped to positions on a circle (or ring). To find where a key is stored, you walk clockwise around the ring from the key's position until you hit a server.</p>
+
+                            <div class="diagram">
+<pre>
+          S4
+        /    \
+      /        \
+    K4          K1
+   /              \
+ S1-----------------S2
+   \              /
+    K2          K3
+      \        /
+        \    /
+          S3
+
+Key K1 -> stored on S2
+Key K2 -> stored on S3
+Key K3 -> stored on S3
+Key K4 -> stored on S1
+</pre>
+                            </div>
+                            <p>The magic happens when a server is added or removed. If we add a new server S5 between S1 and S4, only the keys that were on S1 (like K4) might move to S5. All other keys (K1, K2, K3) are unaffected. This dramatically minimizes data reshuffling.</p>
+                            <p>A <strong>Distributed Hash Table (DHT)</strong> is a practical implementation of this concept. It's a decentralized system that provides a lookup service similar to a hash table, but distributed across many nodes. It's the core technology behind systems like BitTorrent's trackerless network and Amazon's DynamoDB.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 10: Architecture -->
+                <section id="architecture">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-10">Chapter 10: Architectural Patterns</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>How you structure the components of your system has a massive impact on its characteristics. Let's look at some common architectural patterns.</p>
+
+                            <h3>Client-Server Architecture</h3>
+                            <p>This is the most common model. It has two types of nodes:
+                            <ul>
+                                <li><strong>Clients:</strong> Request services or resources.</li>
+                                <li><strong>Servers:</strong> Provide services or resources.</li>
+                            </ul>
+                            The web is a giant client-server system (your browser is the client, the web server is the server). It's a centralized model in the sense that the server is the central authority for the data it holds.</p>
+
+                            <h3>Peer-to-Peer (P2P) Architecture</h3>
+                            <p>In a P2P system, all nodes are equal peers. Each node can act as both a client and a server. They share resources and responsibilities directly with each other without a central server.</p>
+                            <p><strong>Client-Server vs. P2P:</strong>
+                            <div class="diagram">
+<pre>
+Client-Server                        Peer-to-Peer
+
+    [ C ] --- [ S ] --- [ C ]             [ P ] --- [ P ]
+      |         |         |                 |  \   /  |
+      |---------+---------|                 |   \ /   |
+                                            |   / \   |
+                                          [ P ] --- [ P ]
+</pre>
+                            </div>
+                            <p>P2P systems are highly resilient to censorship and single points of failure. Examples include BitTorrent, Skype (in its early days), and cryptocurrencies.</p>
+
+                            <h3>Microservices Architecture</h3>
+                            <p>This is a modern architectural style that has become extremely popular. It's a way of applying distributed systems principles to application development.</p>
+                            <p><strong>The Idea:</strong> Instead of building one giant, monolithic application, you build the application as a suite of small, independently deployable services. Each service runs in its own process and communicates with others using lightweight mechanisms, often an HTTP/REST API.</p>
+                            <p>For example, an e-commerce site could be broken into services for: User Accounts, Product Catalog, Shopping Cart, and Payments.</p>
+                             <div class="diagram">
+<pre>
+Monolith                                 Microservices
+
++--------------------------+             +----------+   +---------+
+|                          |             | User     |   | Catalog |
+|  User Interface          |             | Service  |   | Service |
+|  Business Logic (All)    |   ----->    +----------+   +---------+
+|  Data Access (All)       |                  ^             ^
+|                          |                  |             |
++--------------------------+             +----------+   +---------+
+                                         | Cart     |   | Payment |
+                                         | Service  |   | Service |
+                                         +----------+   +---------+
+</pre>
+                             </div>
+                            <p><strong>Benefits:</strong>
+                            <ul>
+                                <li><strong>Technology Freedom:</strong> Each service can be written in a different programming language.</li>
+                                <li><strong>Independent Deployment:</strong> You can update the Payments service without redeploying the entire application.</li>
+                                <li><strong>Resilience:</strong> If the Catalog service fails, users might still be able to access their accounts.</li>
+                                <li><strong>Scalability:</strong> You can scale the Catalog service independently if it gets a lot of traffic.</li>
+                            </ul>
+                            <p>Microservices fully embrace distributed systems principles, but they also inherit all the challenges: network latency, fault tolerance, eventual consistency, etc.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 11: Advanced Protocols -->
+                <section id="advanced-protocols">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-11">Chapter 11: Advanced Protocols</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <h3>Gossip Protocols (Epidemic Protocols)</h3>
+                            <p>How do you disseminate information across a large number of nodes efficiently and reliably, without a central coordinator? The <strong>gossip protocol</strong> provides an elegant solution.</p>
+                            <p><strong>The Idea:</strong> It's modeled on the spread of rumors or epidemics.
+                            <ol>
+                                <li>A node with new information (a "rumor") periodically chooses a few random peers.</li>
+                                <li>It shares the rumor with them.</li>
+                                <li>Those peers then do the same, and so on.</li>
+                            </ol>
+                            The information spreads exponentially fast and is highly resilient to node and network failures. If a message is lost, the information will just find another path.</p>
+
+                            <div class="diagram">
+<pre>
+Time 1                Time 2                  Time 3
+(A has info)          (A tells B, C)          (B tells D, E; C tells F)
+
+  A*-- B               A*-- B*                 A*-- B*
+  |   |                |  /|                  |  /| \
+  C --D                C*-- D                  C*-- D*--E*
+                       |                       | \
+                                               F*
+(* has info)
+</pre>
+                            </div>
+                            <p><strong>Use Cases:</strong> System state discovery (e.g., in Cassandra, nodes use gossip to learn about the health and status of other nodes in the cluster), data propagation, and failure detection.</p>
+
+                            <h3>Distributed Locking</h3>
+                            <p>Sometimes, you need to ensure that only one process can access a critical resource at a time, even across a distributed system. This requires a <strong>distributed lock</strong>.</p>
+                            <p><strong>The Challenge:</strong> This is much harder than locking in a single process. You can't just use a mutex. The lock service itself must be fault-tolerant. What if the node holding the lock crashes? The lock could be held forever, deadlocking the system.</p>
+                            <p><strong>Implementation:</strong>
+                            A common approach is to use a dedicated lock service (like Google's <strong>Chubby</strong> or Apache <strong>ZooKeeper</strong>). This service is a small, highly available cluster running a consensus algorithm like Paxos or Raft.
+                            <ol>
+                                <li>A client tries to acquire a lock by creating an ephemeral file (e.g., `/locks/my_resource`) on the lock service.</li>
+                                <li>The consensus protocol ensures only one client can create the file successfully. That client now holds the lock.</li>
+                                <li>The client maintains a session with the lock service. If the client crashes, the session times out, and the lock service automatically deletes the ephemeral file, releasing the lock.</li>
+                            </ol>
+                            </p>
+                            <p>Distributed locking is powerful but also a performance bottleneck and a source of complexity. It's often better to design systems that don't require global locks if possible.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 12: Byzantine -->
+                <section id="byzantine">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-12">Chapter 12: Dealing with Traitors - Byzantine Fault Tolerance</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <h3>The Byzantine Generals Problem</h3>
+                            <p>So far, we've mostly discussed "crash failures," where a node simply stops working. But what if a node becomes malicious? What if it starts sending incorrect or conflicting information to other nodes? This is a <strong>Byzantine fault</strong>.</p>
+                            <p><strong>The Story:</strong> A group of Byzantine generals are camped outside an enemy city. They must decide in unison whether to attack or retreat. They can only communicate via messengers. The problem is, some of the generals may be traitors. A traitorous general might tell one general "attack" and another general "retreat," trying to sow chaos and ensure the loyal generals fail.</p>
+                            <p><strong>The Significance:</strong> This is the most difficult class of failure to handle. It's relevant in environments where you cannot trust all participants, such as public blockchain networks (e.g., Bitcoin, Ethereum) or high-security systems.</p>
+
+                            <h3>Byzantine Fault Tolerance (BFT)</h3>
+                            <p>A system is <strong>Byzantine Fault Tolerant (BFT)</strong> if it can reach consensus even if some nodes are malicious. It was proven that to tolerate `f` faulty (traitorous) nodes, you need a total of at least `3f + 1` nodes.</p>
+                            <p>Why `3f+1`? Imagine you have `f` traitors. They could send `f` bad messages. To outvote them, you need `f+1` good messages. But what if those `f+1` good nodes are partitioned from the rest of the network? The remaining part of the network also needs to be able to make progress, and it might contain the `f` traitors. So you need another `f+1` nodes there. This is a very simplified view, but it hints at the high level of redundancy required.</p>
+
+                            <p>Algorithms like <strong>Practical Byzantine Fault Tolerance (PBFT)</strong> provide a solution but are very communication-intensive, involving multiple rounds of voting and message exchanges. This makes them slower and less scalable than algorithms like Raft, which only handle crash failures. They are used in systems like Hyperledger Fabric and some private blockchains where performance is less critical than security against malicious actors.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 13: Security -->
+                <section id="security">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-13">Chapter 13: Securing the Perimeter and the Core</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <h3>Unique Security Challenges</h3>
+                            <p>Securing a distributed system is inherently more complex than securing a single machine due to its multiple points of entry and reliance on the network.</p>
+                            <ul>
+                                <li><strong>Network Eavesdropping:</strong> An attacker can sniff packets on the network to steal data in transit.</li>
+                                <li><strong>Man-in-the-Middle Attacks:</strong> An attacker can intercept and modify communication between two nodes.</li>
+                                <li><strong>Denial of Service (DoS):</strong> An attacker can flood a specific node or the network with traffic, making it unavailable to legitimate users.</li>
+                                <li><strong>Insecure Components:</strong> A vulnerability in one service (e.g., a microservice) can be used as a foothold to attack the rest of the system.</li>
+                            </ul>
+
+                            <h3>Common Security Mechanisms</h3>
+                            <p>A defense-in-depth strategy is required, using multiple layers of security controls.</p>
+                            <ul>
+                                <li><strong>Authentication:</strong> Verifying the identity of clients and servers. Who are you? This is often done using passwords, API keys, or cryptographic certificates (e.g., mTLS where both client and server verify each other's certificates).</li>
+                                <li><strong>Authorization:</strong> Determining what an authenticated user is allowed to do. Are you allowed to access this resource? This is managed by access control lists (ACLs) or role-based access control (RBAC).</li>
+                                <li><strong>Encryption:</strong> Protecting data both in transit and at rest.
+                                    <ul>
+                                        <li><strong>In Transit:</strong> Using protocols like TLS/SSL to encrypt all network communication between nodes.</li>
+                                        <li><strong>At Rest:</strong> Encrypting data on disks and in databases so it's unreadable if the physical storage is stolen.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Auditing and Logging:</strong> Keeping detailed logs of who did what and when. This is crucial for detecting breaches and for forensic analysis after an incident.</li>
+                                <li><strong>Network Segmentation:</strong> Using firewalls and virtual networks to isolate different parts of the system. For example, the database servers should not be directly accessible from the public internet.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 14: Case Studies -->
+                <section id="case-studies">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-14">Chapter 14: Learning from the Giants - Real-World Case Studies</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Theory is one thing; practice is another. Let's see how these concepts are applied in some of the most famous distributed systems.</p>
+
+                            <h3>Amazon DynamoDB and Cassandra (AP Systems)</h3>
+                            <p>Both DynamoDB and Apache Cassandra are NoSQL databases designed for massive scale and high availability, making them classic <strong>AP</strong> systems in the CAP theorem sense.</p>
+                            <ul>
+                                <li><strong>Architecture:</strong> Peer-to-peer, with no master node. All nodes are equal.</li>
+                                <li><strong>Data Distribution:</strong> Use <strong>Consistent Hashing</strong> to partition data across the ring of nodes.</li>
+                                <li><strong>Discovery:</strong> Use a <strong>Gossip Protocol</strong> for nodes to discover each other and share state information.</li>
+                                <li><strong>Consistency:</strong> Offer <strong>tunable consistency</strong> through <strong>Quorums</strong>. You can choose to prioritize write speed (W=1) or read consistency (R+W > N).</li>
+                                <li><strong>Conflict Resolution:</strong> Use <strong>Vector Clocks</strong> (or last-write-wins with timestamps) to resolve conflicting writes that can happen during a network partition.</li>
+                                <li><strong>Repair:</strong> Employ <strong>Read Repair</strong> and anti-entropy mechanisms (like Merkle Trees in Cassandra) to ensure replicas eventually converge.</li>
+                            </ul>
+
+                            <h3>Google Spanner and Chubby (CP Systems)</h3>
+                            <p>Google Spanner is a globally distributed database that famously claims to be both consistent and available (a "CA" system in a partitioned world). How?</p>
+                            <ul>
+                                <li><strong>Architecture:</strong> A complex multi-layer system that is not P2P. It has clear roles for different server types.</li>
+                                <li><strong>Consistency:</strong> Provides external consistency (a form of linearizability) using the <strong>Paxos</strong> consensus algorithm for all writes.</li>
+                                <li><strong>The Magic Ingredient - TrueTime:</strong> Spanner's secret sauce is the <strong>TrueTime API</strong>. It uses GPS and atomic clocks to provide a globally synchronized clock with a small, bounded uncertainty. By knowing the exact uncertainty interval, Spanner can wait it out before committing a transaction, ensuring it can correctly order transactions that happen across different continents. This allows it to provide strong consistency without the massive performance hit one would normally expect.</li>
+                                <li><strong>Chubby Lock Service:</strong> A precursor to Spanner's more general consensus system. It's a distributed lock service used for coarse-grained locking and leader election within Google's infrastructure. It uses <strong>Paxos</strong> to achieve high availability and consistency for its small file system-like API.</li>
+                            </ul>
+
+                            <h3>Google File System (GFS) / Hadoop Distributed File System (HDFS)</h3>
+                            <p>GFS (and its open-source implementation, HDFS) is a distributed file system designed to store massive files (terabytes) across thousands of commodity machines.</p>
+                            <ul>
+                                <li><strong>Architecture:</strong> Master/Slave. A single <strong>Master Node</strong> (or NameNode in HDFS) stores all the file system metadata (the directory tree, file permissions, and which chunks are on which servers). Many <strong>Chunkservers</strong> (or DataNodes) store the actual file data, broken into large chunks (e.g., 64MB).</li>
+                                <li><strong>Fault Tolerance:</strong> The Master is a single point of failure (mitigated by having a hot standby). Data chunks are <strong>replicated</strong> (usually 3x) across different Chunkservers. If a Chunkserver fails, the Master detects it via heartbeats and re-replicates its chunks from the remaining copies to new servers.</li>
+                                <li><strong>Reads/Writes:</strong> A client contacts the Master to find out where the chunks for a file are located. Then, the client communicates directly with the Chunkservers to read or write the data, taking load off the master.</li>
+                            </ul>
+
+                            <h3>Kubernetes</h3>
+                            <p>Kubernetes is a distributed container orchestration system. It's a distributed system designed to manage other distributed systems (your applications).</p>
+                            <ul>
+                                <li><strong>Architecture:</strong> Master/Worker. The <strong>Control Plane</strong> (master components) makes global decisions about the cluster (e.g., scheduling). The <strong>Worker Nodes</strong> run the actual application containers (in Pods).</li>
+                                <li><strong>State Store:</strong> The "brain" of Kubernetes is <strong>etcd</strong>, a distributed key-value store. It stores the entire state of the cluster. `etcd` uses the <strong>Raft</strong> consensus algorithm to ensure its data is strongly consistent and fault-tolerant.</li>
+                                <li><strong>Scheduler:</strong> The scheduler is a control plane component that watches for newly created Pods and selects a node for them to run on. This is a classic distributed scheduling problem.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chapter 15: Practical Implementation -->
+                <section id="practical-concerns">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-15">Chapter 15: In the Trenches - Practical Implementation</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Building real-world systems requires handling a number of nitty-gritty details.</p>
+
+                            <h3>Idempotency: The Safety Net for Retries</h3>
+                            <p>In an unreliable network, you often have to retry failed requests. But what if the original request actually succeeded, and only the response was lost? You might perform the same action twice.</p>
+                            <div class="note">
+                                <p><strong>Idempotency:</strong> An operation is idempotent if it can be applied multiple times without changing the result beyond the initial application.</p>
+                            </div>
+                            <pre><code class="language-python">
+# NOT Idempotent: creates a new user every time
+POST /api/users
+# Idempotent: sets the user's email. Running it 100 times has the same effect as running it once.
+PUT /api/users/123/email {"email": "new@email.com"}
+# Idempotent: deleting something that's already deleted is fine.
+DELETE /api/users/123
+                            </code></pre>
+                            <p>When designing APIs, making operations idempotent wherever possible simplifies client-side error handling immensely. For non-idempotent operations like creating a resource, you can achieve effective idempotency by having the client generate a unique request ID. The server then keeps track of processed request IDs and rejects any duplicates.</p>
+
+                            <h3>Handling Duplicate Messages</h3>
+                            <p>This is closely related to idempotency. At-least-once message delivery systems (like Kafka) can deliver the same message more than once. The consumer must be designed to handle this. Common strategies include:
+                            <ul>
+                                <li>Making the message processing logic idempotent.</li>
+                                <li>Using a unique ID from the message to perform de-duplication, checking a database of processed IDs before processing a new message.</li>
+                            </ul></p>
+
+                            <h3>Quorums: Tuning Consistency</h3>
+                            <p>A quorum is the minimum number of nodes that must participate in an operation for it to be considered successful. This is a key concept for tuning consistency in replicated systems like Cassandra.</p>
+                            <ul>
+                                <li><strong>N:</strong> The total number of replicas.</li>
+                                <li><strong>W:</strong> The write quorum. The number of replicas that must acknowledge a write.</li>
+                                <li><strong>R:</strong> The read quorum. The number of replicas that must respond to a read request.</li>
+                            </ul>
+                            <p>The famous rule is: <strong>If R + W > N, you have strong consistency</strong> for your reads, because any read quorum `R` is guaranteed to overlap with any write quorum `W` by at least one node, ensuring you read at least one copy of the latest write.</p>
+                            <p><strong>Example (N=3):</strong>
+                            <ul>
+                                <li>`W=1, R=1`: Fast reads and writes, but very weak consistency. You could easily read stale data.</li>
+                                <li>`W=3, R=1`: Very slow writes (all replicas must be up), but reads are fast.</li>
+                                <li>`W=2, R=2`: (2+2 > 3). This is a common configuration that guarantees strong consistency while tolerating one node failure. However, it can lead to <strong>stale reads</strong> if a reader picks the one out-of-date node in its quorum before a repair happens. Techniques like hinted handoff and read repair mitigate this.</li>
+                            </ul></p>
+
+                            <h3>Exactly-Once Semantics</h3>
+                            <p>The holy grail of message processing: guaranteeing that a message is processed exactly once, no more, no less. This is extremely hard to achieve in a distributed system. It's usually implemented by combining two things:
+                            <ol>
+                                <li>An <strong>at-least-once</strong> delivery system.</li>
+                                <li>A <strong>de-duplication</strong> mechanism at the consumer that is part of an atomic transaction with the business logic.</li>
+                            </ol>
+                            For example, a message consumer might read a message, start a database transaction, check for the message ID in a processed-log table, perform the business logic, and insert the message ID into the log table, all before committing the transaction. This ensures the message's effect is applied exactly once.</p>
+
+                            <h3>Handling Split-Brain Scenarios</h3>
+                            <p>A "split-brain" occurs when a network partition causes a cluster to split into two or more sub-clusters, each of which believes it is the only active one. For example, two nodes might both think they are the leader.</p>
+                            <p><strong>Mitigation:</strong>
+                            <ul>
+                                <li><strong>Quorums:</strong> This is the primary defense. A node can only become a leader if it can get votes from a majority of the cluster. During a partition, at most one partition can have a majority, so only one leader can be elected.</li>
+                                <li><strong>Fencing:</strong> If a node believes another node (e.g., the old leader) is malfunctioning, it can use a "fencing" mechanism to forcibly shut it down before taking over its duties. This can be done by revoking its access to shared storage (storage fencing) or by powering it down via a remote management card (power fencing).</li>
+                            </ul></p>
+                        </div>
+                    </div>
+                </section>
+
+                 <!-- Chapter 16: Conclusion -->
+                <section id="conclusion">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="chapter-16">Chapter 16: The Journey Ahead</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>We have journeyed from the fundamental question of "what is a distributed system?" to the intricate dance of consensus algorithms, consistency models, and real-world architectural patterns. We've seen that building these systems is a story of trade-offs: consistency versus availability, simplicity versus power, and safety versus performance.</p>
+
+                            <p>The key takeaways are not just the algorithms themselves, but the principles behind them:</p>
+                            <ul>
+                                <li><strong>Embrace Failure:</strong> Failures are not an edge case; they are a core part of the operating model. Design for fault tolerance from day one.</li>
+                                <li><strong>Question Time:</strong> Understand that there is no universal "now." This will guide your thinking on ordering and consistency.</li>
+                                <li><strong>Know Your Guarantees:</strong> Be explicit about the consistency and availability guarantees your system provides. The CAP theorem is not just a theory; it's a practical design choice.</li>
+                                <li><strong>Simplicity is a Virtue:</strong> The complexity of distributed systems is immense. Prefer simpler, more understandable solutions (like Raft over Paxos) when they fit the problem. Avoid heavyweight mechanisms like distributed transactions unless absolutely necessary.</li>
+                            </ul>
+
+                            <p>The field of distributed systems is constantly evolving, with new research, new algorithms, and new architectural patterns emerging. However, the fundamental challenges of concurrency, partial failure, and network unreliability remain. By understanding the principles we've discussed in this book, you are now equipped to navigate this complex but fascinating world, to ask the right questions, and to make informed decisions when designing and building the scalable, resilient systems of the future.</p>
+
+                            <p>Thank you for reading.</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+            <button id="dark-mode-toggle" class="dark-mode-toggle mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored">
+                <i class="material-icons">brightness_4</i>
+            </button>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const toggleButton = document.getElementById('dark-mode-toggle');
+            const body = document.body;
+
+            // Check for saved user preference, if any, on load
+            if (localStorage.getItem('dark-mode') === 'true') {
+                body.classList.add('dark-mode');
+            }
+
+            toggleButton.addEventListener('click', () => {
+                body.classList.toggle('dark-mode');
+
+                // Save the user's preference
+                if (body.classList.contains('dark-mode')) {
+                    localStorage.setItem('dark-mode', 'true');
+                } else {
+                    localStorage.setItem('dark-mode', 'false');
+                }
+            });
+
+            // Active link highlighting in drawer
+            const navLinks = document.querySelectorAll('.mdl-layout__drawer .mdl-navigation__link');
+            const sections = document.querySelectorAll('section[id]');
+
+            const activateLink = (id) => {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if(link.getAttribute('href') === `#${id}`) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        activateLink(entry.target.id);
+                    }
+                });
+            }, { rootMargin: '-50% 0px -50% 0px' }); // Activates when section is in middle of viewport
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
