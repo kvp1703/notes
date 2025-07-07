@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Complete Guide to TCP & UDP</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Fira+Code:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .mdl-layout__header {
+            background-color: #3f51b5; /* Indigo */
+            color: white;
+        }
+
+        .mdl-layout__header .mdl-layout-title {
+            font-size: 1.8em;
+        }
+
+        .mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
+            font-size: 1.1em;
+            color: #424242;
+            padding: 12px 16px;
+        }
+         .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+            background-color: #e8eaf6; /* Light indigo */
+        }
+
+        .page-content {
+            padding: 20px;
+            max-width: 900px;
+            margin: 20px auto;
+        }
+
+        .mdl-card {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+        }
+
+        section[id], h2[id], h3[id] {
+             scroll-margin-top: 80px;
+        }
+
+        .mdl-card__supporting-text {
+            color: #333;
+            font-size: 1.1em;
+        }
+        .mdl-card__title-text {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        h2, h3, h4 {
+            color: #303f9f; /* Darker Indigo */
+        }
+
+        pre, code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        }
+
+        pre {
+            background-color: #272822; /* Monokai-like */
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        :not(pre) > code {
+            background-color: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #c51162; /* Pink accent */
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        .toc {
+            background-color: rgba(232, 234, 246, 0.85);
+            border-left: 5px solid #3f51b5;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc ul li a {
+            text-decoration: none;
+            color: #303f9f;
+            display: block;
+            padding: 5px 0;
+            transition: color 0.2s;
+        }
+        .toc ul li a:hover {
+            color: #1a237e;
+            font-weight: bold;
+        }
+        .toc ul ul {
+            padding-left: 20px;
+        }
+        .toc ul ul li a {
+            font-size: 0.9em;
+        }
+
+
+        .note {
+            background-color: rgba(255, 249, 196, 0.85);
+            border-left: 5px solid #ffc107; /* Amber */
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .note p { margin: 0; }
+
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .dark-mode .mdl-layout__header {
+            background-color: #1f1f1f;
+        }
+        .dark-mode .mdl-card {
+            background-color: rgba(40, 40, 40, 0.9);
+            color: #e0e0e0;
+        }
+        .dark-mode .mdl-card__supporting-text {
+            color: #e0e0e0;
+        }
+        .dark-mode h2, .dark-mode h3, .dark-mode h4 {
+            color: #bb86fc;
+        }
+        .dark-mode .toc {
+            background-color: rgba(30, 30, 30, 0.85);
+            border-left-color: #bb86fc;
+        }
+        .dark-mode .toc ul li a {
+            color: #bb86fc;
+        }
+        .dark-mode .toc ul li a:hover {
+            color: #cfc2ff;
+        }
+        .dark-mode .note {
+            background-color: rgba(50, 50, 30, 0.85);
+            border-left-color: #fdd835;
+            color: #e0e0e0;
+        }
+        .dark-mode :not(pre) > code {
+            background-color: #333;
+            color: #f06292;
+        }
+        .dark-mode .mdl-layout__drawer {
+            background-color: #1e1e1e;
+        }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
+            color: #bb86fc;
+        }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+            background-color: #333;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+        <header class="mdl-layout__header">
+            <div class="mdl-layout__header-row">
+                <span class="mdl-layout-title">The Complete Guide to TCP & UDP</span>
+            </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <span class="mdl-layout-title">Navigation</span>
+            <nav class="mdl-navigation">
+                <a class="mdl-navigation__link" href="#intro">Introduction</a>
+                <a class="mdl-navigation__link" href="#tcp-vs-udp">TCP vs. UDP: Core Differences</a>
+                <a class="mdl-navigation__link" href="#deep-dive-tcp">Deep Dive: TCP</a>
+                <a class="mdl-navigation__link" href="#deep-dive-udp">Deep Dive: UDP</a>
+                <a class="mdl-navigation__link" href="#practical-apps">Practical Applications</a>
+                <a class="mdl-navigation__link" href="#security">Security Considerations</a>
+                <a class="mdl-navigation__link" href="#coding">Coding & Implementation</a>
+            </nav>
+        </div>
+        <main class="mdl-layout__content">
+            <div class="page-content">
+
+                <!-- Dark Mode Toggle -->
+                <button id="dark-mode-toggler" class="dark-mode-toggle mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored">
+                    <i class="material-icons">brightness_4</i>
+                </button>
+
+                <!-- Introduction -->
+                <div class="mdl-card mdl-shadow--2dp" id="intro">
+                    <div class="mdl-card__title">
+                        <h2 class="mdl-card__title-text">Introduction</h2>
+                    </div>
+                    <div class="mdl-card__supporting-text">
+                        <p>Welcome to the complete guide to the Transmission Control Protocol (TCP) and User Datagram Protocol (UDP). These two protocols form the bedrock of communication over the internet, operating at the Transport Layer (Layer 4) of the TCP/IP model. While both are used to send data between applications, they offer fundamentally different services.</p>
+                        <ul>
+                            <li><strong>TCP</strong> is the reliable, connection-oriented protocol. It's like sending a registered letter with tracking: you get confirmation of delivery, and the pages arrive in the correct order.</li>
+                            <li><strong>UDP</strong> is the simple, connectionless protocol. It's like sending a postcard: it's fast and has low overhead, but there's no guarantee it will arrive, or that multiple postcards will arrive in the order they were sent.</li>
+                        </ul>
+                        <p>This guide will explore their mechanics, differences, and use cases in depth, answering a wide array of technical questions for students, developers, and network engineers.</p>
+                    </div>
+                </div>
+
+                <!-- Table of Contents -->
+                <div class="toc">
+                    <h4>On This Page</h4>
+                    <ul>
+                        <li><a href="#tcp-vs-udp">TCP vs. UDP: Core Differences</a>
+                            <ul>
+                                <li><a href="#header-comparison">Header Comparison</a></li>
+                                <li><a href="#encapsulation-decapsulation">Encapsulation vs. Decapsulation</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#deep-dive-tcp">Deep Dive into TCP: The Reliable Protocol</a>
+                            <ul>
+                                <li><a href="#tcp-flags">TCP Flags Explained</a></li>
+                                <li><a href="#tcp-reliability">Ensuring Reliability: In-Order Delivery</a></li>
+                                <li><a href="#tcp-flow-control">Flow Control: The Receive Buffer & Window Size</a></li>
+                                <li><a href="#tcp-congestion-control">Congestion Control: Slow Start, Avoidance & Recovery</a></li>
+                                <li><a href="#tcp-duplicate-acks">Handling Duplicate ACKs</a></li>
+                                <li><a href="#tcp-multicast">TCP and Multiple Receivers</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#deep-dive-udp">Deep Dive into UDP: The Fast Protocol</a>
+                            <ul>
+                                <li><a href="#udp-fragmentation">UDP Fragmentation at the IP Layer</a></li>
+                                <li><a href="#udp-tradeoffs">Trade-offs for Real-Time Applications</a></li>
+                                <li><a href="#udp-reliability">Implementing Reliability on UDP</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#practical-apps">Practical Applications & Scenarios</a>
+                            <ul>
+                                <li><a href="#tcp-udp-both">Systems Using Both TCP & UDP</a></li>
+                                <li><a href="#scenario-frequent-updates">Scenario: Frequent Updates to Multiple Receivers</a></li>
+                                <li><a href="#scenario-airplane">Scenario: Airplane Location Reporting</a></li>
+                                <li><a href="#scenario-dns">Scenario: DNS Queries over UDP</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#security">Security Considerations</a>
+                            <ul>
+                                <li><a href="#udp-security">UDP Security: Spoofing & Amplification</a></li>
+                                <li><a href="#tcp-security">TCP Security Implications</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#coding">Coding & Implementation</a>
+                             <ul>
+                                <li><a href="#socket-differences">Socket Differences: TCP vs. UDP</a></li>
+                                <li><a href="#udp-code-example">Code Example: UDP Client & Server</a></li>
+                                <li><a href="#implementing-udp-reliability-code">Implementing Custom Reliability on UDP</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Section: TCP vs. UDP -->
+                <section id="tcp-vs-udp">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="header-comparison">TCP vs. UDP: Header Comparison</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>The differences between TCP and UDP are most apparent in their headers. A TCP header is a minimum of 20 bytes, packed with fields for managing reliability, flow, and congestion. A UDP header is a mere 8 bytes, reflecting its simplicity.</p>
+                            
+                            <h3 id="udp-header">UDP Header (8 bytes)</h3>
+                            <pre>
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          Source Port          |       Destination Port        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|            Length             |            Checksum           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</pre>
+                            
+                            <h3 id="tcp-header">TCP Header (20+ bytes)</h3>
+                            <pre>
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          Source Port          |       Destination Port        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Sequence Number                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Acknowledgment Number                      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Data |           |U|A|P|R|S|F|                               |
+| Offset| Reserved  |R|C|S|S|Y|I|            Window             |
+|       |           |G|K|H|T|N|N|                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|            Checksum           |         Urgent Pointer        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Options                    |    Padding    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</pre>
+
+                            <h4>Key Fields in TCP but not in UDP (and why):</h4>
+                            <ul>
+                                <li><strong>Sequence Number (32 bits):</strong> Tracks the byte number of the first byte in the segment. Essential for reordering out-of-order packets and detecting duplicates. UDP doesn't guarantee order, so it's not needed.</li>
+                                <li><strong>Acknowledgment Number (32 bits):</strong> Contains the value of the next sequence number the sender of the ACK is expecting to receive. This is the core mechanism for confirming receipt of data. UDP is connectionless and doesn't acknowledge data.</li>
+                                <li><strong>Control Flags (e.g., SYN, ACK, FIN):</strong> Used to manage the state of the connection (setup, teardown, reset). UDP has no connection state to manage.</li>
+                                <li><strong>Window Size (16 bits):</strong> Used for flow control. It tells the sender how much data (in bytes) the receiver is currently willing to accept. UDP has no flow control.</li>
+                                <li><strong>Urgent Pointer (16 bits):</strong> Used with the URG flag to indicate urgent data that should be processed out of band. UDP has no concept of urgent data.</li>
+                                <li><strong>Options (Variable):</strong> Allows for extensions to TCP, such as Maximum Segment Size (MSS), Selective Acknowledgments (SACK), and Window Scaling. UDP's simplicity precludes such options.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mdl-card mdl-shadow--2dp">
+                         <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="encapsulation-decapsulation">Encapsulation vs. Decapsulation</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Encapsulation and decapsulation are fundamental processes in layered networking models like TCP/IP.</p>
+                            <ul>
+                                <li><strong>Encapsulation (Sending):</strong> As data moves down the protocol stack (from Application to Physical layer), each layer adds its own header (and sometimes a trailer). This is like putting a letter (data) into an envelope (TCP/UDP header), then putting that envelope into a larger package (IP header), and finally putting a shipping label on it (Ethernet header).</li>
+                                <li><strong>Decapsulation (Receiving):</strong> As data moves up the stack on the receiving end, each layer strips off its corresponding header, processes it, and passes the remaining payload up to the next layer. The process is reversed until the original application data is delivered.</li>
+                            </ul>
+                            <pre>
+     Sender (Encapsulation)              Receiver (Decapsulation)
++-------------------+                    +-------------------+
+| Application Data  |                    | Application Data  |
++-------------------+                    +-------------------+
+        |                                        ^
+        v                                        |
++-----+-------------+  -- TCP/UDP Header --  +-----+-------------+
+| TCP |    Data     |                      | TCP |    Data     |
++-----+-------------+                      +-----+-------------+
+        |                                        ^
+        v                                        |
++----+-----+--------+  ---- IP Header -----  +----+-----+--------+
+| IP | TCP |  Data  |                      | IP | TCP |  Data  |
++----+-----+--------+                      +----+-----+--------+
+        |                                        ^
+        v                                        |
++-----+----+-----+---+  -- Frame Header --  +-----+----+-----+---+
+| Eth | IP | TCP | D |                      | Eth | IP | TCP | D |
++-----+----+-----+---+                      +-----+----+-----+---+</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Deep Dive TCP -->
+                <section id="deep-dive-tcp">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">Deep Dive into TCP: The Reliable Protocol</h2>
+                        </div>
+                    </div>
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="tcp-flags">TCP Flags Explained</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>TCP flags (or control bits) are 1-bit fields in the TCP header used to control the connection state and handle data.</p>
+                            <ul>
+                                <li><strong>SYN (Synchronize):</strong> Used to initiate a connection. Sent in the first packet of the three-way handshake to synchronize sequence numbers.</li>
+                                <li><strong>ACK (Acknowledgment):</strong> Indicates that the Acknowledgment Number field is significant. It's used to acknowledge received data. Once a connection is established, virtually all packets have this flag set.</li>
+                                <li><strong>FIN (Finish):</strong> Used to gracefully terminate a connection. It indicates that the sender has no more data to send.</li>
+                                <li><strong>RST (Reset):</strong> Abruptly terminates a connection. It's sent in response to invalid segments or to refuse a connection attempt. Unlike FIN, it immediately closes the connection and discards any data in the buffers.</li>
+                                <li><strong>PSH (Push):</strong> Tells the receiving TCP stack to immediately "push" the data up to the receiving application instead of waiting for its buffer to fill. Often used in interactive applications like SSH.</li>
+                                <li><strong>URG (Urgent):</strong> Indicates that the Urgent Pointer field is significant. This mechanism is rarely used in modern applications but was designed to allow the sender to notify the receiver of urgent data.</li>
+                            </ul>
+                            <h4 id="tcp-handshake">Real-World Use: The Three-Way Handshake</h4>
+                            <pre>
+Client                Server
+  | -- SYN (seq=x) -->   |  (Request to connect)
+  |                      |
+  | <-- SYN, ACK (seq=y, ack=x+1) -- |  (Acknowledge request, also request to connect)
+  |                      |
+  | -- ACK (seq=x+1, ack=y+1) --> |  (Acknowledge server's request, connection established)
+  |                      |
+</pre>
+
+                            <h4>Understanding the Three-Way Handshake Process</h4>
+                            <p>The process involves two computers, a <strong>Client</strong> (the one initiating the connection, like your web browser) and a <strong>Server</strong> (the one being connected to, like google.com).</p>
+                            <p>The handshake uses special messages called TCP segments. For the handshake, three special "flags" in these segments are key:</p>
+                            <ul>
+                                <li><strong>SYN (Synchronize):</strong> "I want to start a connection."</li>
+                                <li><strong>ACK (Acknowledge):</strong> "I have received your message."</li>
+                                <li><strong>SEQ (Sequence Number):</strong> A unique number to keep track of the data being sent.</li>
+                            </ul>
+                            <p>Here is the step-by-step process:</p>
+
+                            <h5>Step 1: Client → Server (SYN)</h5>
+                            <p>The client wants to start a conversation. It sends a TCP segment with the SYN flag set.</p>
+                            <p><strong>Client says:</strong> "Hello, Server! I'd like to establish a connection. My starting sequence number is x."</p>
+                            <p><strong>In technical terms:</strong> The client sends a TCP segment where <code>SYN = 1</code> and it includes an Initial Sequence Number (ISN), let's call it <code>SEQ = x</code>. This number is chosen randomly for security.</p>
+
+                            <h5>Step 2: Server → Client (SYN-ACK)</h5>
+                            <p>The server receives the client's request. If it's able and willing to connect, it responds. This response does two things: it acknowledges the client's request AND it proposes its own connection parameters.</p>
+                            <p><strong>Server says:</strong> "Hello, Client! I got your message and I'm ready to connect. I acknowledge your sequence number x (by sending x+1). My own starting sequence number is y."</p>
+                            <p><strong>In technical terms:</strong> The server sends a TCP segment where <code>SYN = 1</code> and <code>ACK = 1</code>.</p>
+                            <ul>
+                                <li>It sets its own Initial Sequence Number: <code>SEQ = y</code>.</li>
+                                <li>It sets the Acknowledgment Number to the client's sequence number plus one: <code>ACK = x + 1</code>. This confirms it received the first packet correctly.</li>
+                            </ul>
+
+                            <h5>Step 3: Client → Server (ACK)</h5>
+                            <p>The client receives the server's response. It now knows the server is ready. The final step is for the client to acknowledge the server's message.</p>
+                            <p><strong>Client says:</strong> "Got it! I acknowledge your sequence number y (by sending y+1). Let's start sending data!"</p>
+                            <p><strong>In technical terms:</strong> The client sends a TCP segment where <code>ACK = 1</code>.</p>
+                            <ul>
+                                <li>It sets the Acknowledgment Number to the server's sequence number plus one: <code>ACK = y + 1</code>.</li>
+                                <li>The sequence number for this packet is now <code>x+1</code>.</li>
+                            </ul>
+
+                            <h5>The Connection is Established!</h5>
+                            <p>At this point, both the client and server have received an acknowledgment of their connection request. The three-way handshake is complete, and a full-duplex (two-way) reliable connection is established. Now, they can begin sending and receiving actual application data (like the HTML for a webpage).</p>
+                        </div>
+                    </div>
+
+                    <div class="mdl-card mdl-shadow--2dp">
+                         <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="tcp-reliability">Ensuring Reliability: In-Order Delivery</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>TCP's reliability is built on three core mechanisms: Sequence Numbers, Acknowledgments, and Timers.</p>
+                            <ul>
+                                <li><strong>Sequence Numbers (SEQ):</strong> TCP views data as a stream of bytes. Each byte is numbered with a sequence number. The SEQ field in a TCP segment contains the number of the first byte of data in that segment.</li>
+                                <li><strong>Acknowledgments (ACK):</strong> When a receiver gets a segment, it sends back an ACK. The ACK number is *cumulative*; it specifies the sequence number of the *next* byte it expects to receive. For example, if it receives bytes 1-1000, it sends an ACK of 1001.</li>
+                            </ul>
+                            <h4>Handling Packet Issues:</h4>
+                            <ul>
+                                <li><strong>Out-of-Order Packets:</strong> If the receiver gets segment 2001-3000 before 1001-2000, it will buffer the later segment. It will continue sending ACKs for 1001 until the missing segment arrives. Once segment 1001-2000 arrives, it can process both segments and will send an ACK for 3001.</li>
+                                <li><strong>Lost Packets:</strong> The sender starts a retransmission timer for every segment it sends. If it doesn't receive an ACK for that segment before the timer expires, it assumes the packet was lost and retransmits it.</li>
+                                <li><strong>Duplicate Packets:</strong> The receiver uses the sequence number to identify duplicates. If it receives a segment with a sequence number it has already processed and acknowledged, it simply discards the duplicate segment.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mdl-card mdl-shadow--2dp">
+                         <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="tcp-flow-control">Flow Control: The Receive Buffer & Window Size</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Flow control prevents a fast sender from overwhelming a slow receiver. This is managed by the receiver, not the network.</p>
+                            <ul>
+                                <li><strong>Receive Buffer:</strong> The receiver has a finite buffer to store incoming data before the application reads it.</li>
+                                <li><strong>Window Size (<code>rwnd</code>):</strong> The receiver advertises its available buffer space to the sender via the "Window" field in the TCP header. This is the amount of data the sender is allowed to send before it must wait for an ACK that updates the window.</li>
+                            </ul>
+                            <h4>What happens if the TCP receive buffer is full?</h4>
+                            <ol>
+                                <li>The receiver's OS sees that the buffer is full (the application isn't reading data fast enough).</li>
+                                <li>In the next ACK it sends to the sender, it will set the <strong>Window Size to 0</strong>. This is called a "zero-window advertisement."</li>
+                                <li><strong>Impact on Sender:</strong> The sender receives the zero-window ACK and must stop sending data. However, it doesn't shut down the connection. It starts a "persist timer."</li>
+                                <li><strong>Impact on Receiver:</strong> The receiver processes data. Once the application reads some data and space becomes available in the buffer, the receiver will send a new ACK with a non-zero window size (a "window update"), telling the sender it's okay to resume.</li>
+                                <li><strong>Persist Timer:</strong> If the window update packet gets lost, the connection would be deadlocked. To prevent this, the sender's persist timer periodically expires, prompting it to send a small "window probe" packet (typically 1 byte). This probe forces the receiver to re-send its current window size, breaking the deadlock.</li>
+                            </ol>
+                            <div class="note"><p><strong>Flow Control vs. Congestion Control:</strong> Flow control is about the receiver's capacity. Congestion control is about the network's capacity. They are distinct but related mechanisms.</p></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mdl-card mdl-shadow--2dp">
+                         <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="tcp-congestion-control">Congestion Control: Slow Start, Avoidance & Recovery</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Congestion control prevents a single TCP connection from overwhelming the network. TCP uses a <strong>Congestion Window (<code>cwnd</code>)</strong>, a state variable held by the sender, which limits the amount of unacknowledged data it can have in flight. The effective window is `min(cwnd, rwnd)`.</p>
+                            <p>TCP transitions between several phases:</p>
+                            <ol>
+                                <li><strong>Slow Start:</strong>
+                                    <ul>
+                                        <li><strong>Trigger:</strong> A new connection begins.</li>
+                                        <li><strong>Behavior:</strong> <code>cwnd</code> starts at a small value (e.g., 1-10 MSS). For every ACK received, <code>cwnd</code> is increased by 1 MSS. This results in an exponential increase of the sending rate (<code>cwnd</code> doubles approximately every Round-Trip Time (RTT)).</li>
+                                        <li><strong>Goal:</strong> To quickly probe for available network bandwidth.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Congestion Avoidance:</strong>
+                                    <ul>
+                                        <li><strong>Trigger:</strong> <code>cwnd</code> reaches the <strong>Slow Start Threshold (<code>ssthresh</code>)</strong>.</li>
+                                        <li><strong>Behavior:</strong> The growth of <code>cwnd</code> becomes linear instead of exponential. For each full window of data acknowledged, <code>cwnd</code> increases by just 1 MSS. This is a more cautious increase to avoid causing congestion.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Fast Retransmit / Fast Recovery:</strong>
+                                    <ul>
+                                        <li><strong>Trigger:</strong> The sender receives <strong>three duplicate ACKs</strong> for the same sequence number. This is interpreted as a single packet loss, but that the network is otherwise okay (since subsequent packets are getting through).</li>
+                                        <li><strong>Behavior (TCP Reno):</strong>
+                                            <ol>
+                                                <li>Set <code>ssthresh</code> to `cwnd / 2`.</li>
+                                                <li>Set <code>cwnd</code> to `ssthresh + 3 MSS`.</li>
+                                                <li>Retransmit the missing segment immediately without waiting for a timeout.</li>
+                                                <li>Enter the Fast Recovery phase, where each additional duplicate ACK inflates `cwnd`, allowing more packets to be sent while waiting for the ACK of the retransmitted segment. Once that new ACK arrives, TCP enters Congestion Avoidance.</li>
+                                            </ol>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            <h4>Timeout vs. Triple Duplicate ACKs</h4>
+                            <p>The network's response to these two events is very different because they signal different levels of problems:</p>
+                            <ul>
+                                <li><strong>On Triple Duplicate ACK (minor congestion):</strong>
+                                    <ul>
+                                        <li><code>ssthresh = cwnd / 2</code></li>
+                                        <li><code>cwnd = ssthresh</code> (in modern TCP like CUBIC, or `ssthresh + 3` in Reno)</li>
+                                        <li>TCP enters Fast Recovery, a less punitive state.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>On Retransmission Timeout (severe congestion):</strong>
+                                    <ul>
+                                        <li><code>ssthresh = cwnd / 2</code></li>
+                                        <li><code>cwnd = 1 MSS</code> (reset to the beginning)</li>
+                                        <li>TCP enters Slow Start again. This is a very aggressive back-off, assuming the network is in a bad state.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <pre>
+                                     Congestion Window (cwnd)
+                                            |
+                                 (Timeout)  |
+                                ssthresh_2 . . . . . . . . . . . . . 
+                                           / \
+                                          /   \. (Triple Dup ACK)
+                                         /     `-- Fast Recovery
+                                ssthresh_1 . . . . /. . . . . . . . .
+                                          /       / <- Congestion
+                                         /       /      Avoidance
+                                        /       /
+             Exponential Growth ->     /       /
+           (Slow Start)               /       /
+                                     /       /
+        -----------------------------+----------------------------- Time --></pre>
+                        </div>
+                    </div>
+                     <div class="mdl-card mdl-shadow--2dp">
+                         <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="tcp-duplicate-acks">Handling Duplicate ACKs</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Duplicate ACKs are a crucial signal for TCP's congestion control.</p>
+                            <p><strong>Scenario:</strong> Sender sends packets 1, 2, 3, 4, 5. Packet 2 gets lost, but 3, 4, and 5 arrive at the receiver.</p>
+                            <ol>
+                                <li>Receiver gets packet 1, sends <code>ACK=2</code>.</li>
+                                <li>Packet 2 is lost.</li>
+                                <li>Receiver gets packet 3. It sees a gap. It discards packet 3 (or buffers it) and resends its last expected ACK: <code>ACK=2</code>. <strong>(First Duplicate ACK)</strong>.</li>
+                                <li>Receiver gets packet 4. Again, it sees the gap and sends <code>ACK=2</code>. <strong>(Second Duplicate ACK)</strong>.</li>
+                                <li>Receiver gets packet 5. Again, it sends <code>ACK=2</code>. <strong>(Third Duplicate ACK)</strong>.</li>
+                            </ol>
+                            <p><strong>Indication:</strong> When the sender receives the third duplicate ACK (for a total of four ACKs for packet 2), it assumes that packet 2 was lost but that the network is still flowing (since subsequent packets are arriving). This is the trigger for <strong>Fast Retransmit</strong>, which is much faster than waiting for a full retransmission timeout.</p>
+                        </div>
+                    </div>
+
+                    <div class="mdl-card mdl-shadow--2dp">
+                         <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="tcp-multicast">TCP and Multiple Receivers</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p><strong>False.</strong> A standard TCP session does not allow one host to send segments to multiple receivers simultaneously. </p>
+                            <p><strong>Explanation:</strong> TCP is a strictly <strong>point-to-point</strong> protocol. A TCP connection is uniquely defined by a 4-tuple: `(source_ip, source_port, dest_ip, dest_port)`. The entire state machine of TCP—sequence numbers, acknowledgments, window sizes, and connection state—is tied to a single sender and a single receiver. Maintaining this state for multiple receivers within one "session" is not possible with standard TCP.</p>
+                            <p>To send data to multiple receivers, an application must establish a separate, independent TCP connection to each one.</p>
+                        </div>
+                    </div>
+
+                </section>
+                
+                <!-- Section: Deep Dive UDP -->
+                <section id="deep-dive-udp">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">Deep Dive into UDP: The Fast Protocol</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="udp-fragmentation">UDP Fragmentation at the IP Layer</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>When an application sends a large UDP datagram, it gets encapsulated in an IP packet. If this IP packet is larger than the <strong>Maximum Transmission Unit (MTU)</strong> of a network link it needs to cross (e.g., standard Ethernet MTU is 1500 bytes), the router at that link must fragment the IP packet.</p>
+                            <h4>How Fragmentation Occurs:</h4>
+                            <ol>
+                                <li>A router receives an IP packet of 4000 bytes, but the outgoing link has an MTU of 1500 bytes.</li>
+                                <li>The router creates smaller IP packets (fragments) that fit within the MTU. The IP header itself is typically 20 bytes, so the data payload of each fragment must be `1500 - 20 = 1480` bytes.</li>
+                                <li><strong>Fragment Offset Calculation:</strong> The `Fragment Offset` field in the IP header is used to reassemble the packet. It specifies the offset of the fragment's data, in 8-byte units, from the start of the original IP packet's data.
+                                    <ul>
+                                        <li><strong>Fragment 1:</strong> Data bytes 0-1479. `Fragment Offset = 0 / 8 = 0`. `More Fragments (MF) flag = 1`.</li>
+                                        <li><strong>Fragment 2:</strong> Data bytes 1480-2959. `Fragment Offset = 1480 / 8 = 185`. `MF flag = 1`.</li>
+                                        <li><strong>Fragment 3:</strong> Remaining data. `Fragment Offset = 2960 / 8 = 370`. `MF flag = 0` (this is the last fragment).</li>
+                                    </ul>
+                                </li>
+                                <li>The destination host receives these fragments and uses the IP Identification, Flags, and Fragment Offset fields to reassemble the original IP packet before passing the complete UDP datagram up to the application.</li>
+                            </ol>
+                            <h4>Risks and Limitations of Fragmentation:</h4>
+                            <ul>
+                                <li><strong>Reliability Nightmare:</strong> If even one IP fragment is lost, the entire original datagram is lost. The destination host cannot reassemble the packet and will discard all other received fragments for that datagram. UDP has no mechanism to request retransmission of just the lost fragment.</li>
+                                <li><strong>Performance Overhead:</strong> Fragmentation and reassembly consume CPU resources on routers and the destination host.</li>
+                                <li><strong>Security Issues:</strong> Fragmentation can be exploited in attacks like the "teardrop attack."</li>
+                                <li><strong>Path MTU Discovery (PMTUD):</strong> To avoid fragmentation, systems often use PMTUD to determine the smallest MTU along a path and size their packets accordingly. However, PMTUD can be unreliable if ICMP messages are blocked by firewalls.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="udp-tradeoffs">Trade-offs for Real-Time Applications</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>UDP is often the protocol of choice for real-time applications like VoIP, online gaming, and live video streaming. </p>
+                            <h4>Advantages (The Trade-offs):</h4>
+                            <ul>
+                                <li><strong>Low Latency:</strong> No connection setup (handshake), no retransmission delays, no head-of-line blocking. Data can be sent immediately.</li>
+                                <li><strong>Timeliness over Reliability:</strong> In real-time applications, receiving old data late is often worse than not receiving it at all. A retransmitted video frame from 2 seconds ago is useless.</li>
+                                <li><strong>Simplicity:</strong> Less processing overhead on the endpoints.</li>
+                            </ul>
+                            <h4>Disadvantages (The Risks):</h4>
+                            <ul>
+                                <li><strong>Unreliability:</strong> Packets can be lost, duplicated, or arrive out of order, leading to glitches, artifacts, or dropouts in the audio/video stream.</li>
+                                <li><strong>No Flow/Congestion Control:</strong> A naive UDP application can easily cause network congestion, leading to more packet loss for itself and other users. Well-behaved real-time applications must implement their own congestion control.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="udp-reliability">Implementing Reliability on UDP</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p><strong>Yes, it is possible for an application using UDP to provide reliable data delivery.</strong> This is done by implementing reliability mechanisms at the <strong>application layer</strong>. This approach allows developers to pick and choose the features they need, creating a "TCP-lite" protocol tailored to their needs.</p>
+                            <h4>How to Implement It:</h4>
+                            <ol>
+                                <li><strong>Sequence Numbers:</strong> Add a sequence number to the payload of each UDP datagram. This allows the receiver to detect lost or out-of-order packets.</li>
+                                <li><strong>Acknowledgments (ACKs):</strong> The receiver sends back custom ACK packets to the sender to confirm receipt. The design can be simple (ACK every packet) or more complex (selective ACKs for missing packets).</li>
+                                <li><strong>Retransmission Timers:</strong> The sender maintains a timer for unacknowledged packets. If an ACK isn't received within a certain time, the sender retransmits the data.</li>
+                                <li><strong>Custom Logic:</strong> The application can decide what to do on packet loss. For a file transfer, it must retransmit. For a video stream, it might choose to skip the lost frame or request a lower-quality version.</li>
+                            </ol>
+                            <p>This is precisely what modern protocols like <strong>QUIC</strong> (used by HTTP/3) do. QUIC runs over UDP but provides a sophisticated, reliable, and secure transport layer with features that even surpass TCP, such as eliminating head-of-line blocking.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Practical Apps -->
+                <section id="practical-apps">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">Practical Applications & Scenarios</h2>
+                        </div>
+                    </div>
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="tcp-udp-both">Systems Using Both TCP & UDP</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Many complex applications use both protocols to leverage the strengths of each.</p>
+                            <ul>
+                                <li><strong>DNS (Domain Name System):</strong>
+                                    <ul>
+                                        <li><strong>UDP (Port 53):</strong> Used for standard queries. A single request/response packet is fast and efficient. If the UDP packet is lost, the client's resolver simply times out and retries.</li>
+                                        <li><strong>TCP (Port 53):</strong> Used for two main cases:
+                                            <ol>
+                                                <li>When the response data size exceeds 512 bytes (the traditional limit for UDP payloads).</li>
+                                                <li>For zone transfers between DNS servers, where a large amount of data must be transferred reliably.</li>
+                                            </ol>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li><strong>VoIP (Voice over IP) and Video Conferencing (e.g., SIP, RTP):</strong>
+                                    <ul>
+                                        <li><strong>UDP (for RTP):</strong> The actual voice/video data is sent over UDP via the Real-time Transport Protocol (RTP). Timeliness is critical, and a lost packet is preferable to a delayed one.</li>
+                                        <li><strong>TCP (for SIP):</strong> The session control and signaling (call setup, teardown, ringing) are often handled over TCP via the Session Initiation Protocol (SIP) to ensure these critical control messages are delivered reliably.</li>
+                                    </ul>
+                                </li>
+                                 <li><strong>Online Gaming:</strong>
+                                    <ul>
+                                        <li><strong>UDP:</strong> Used for real-time game state updates like player position, actions, and physics. Latency is paramount.</li>
+                                        <li><strong>TCP:</strong> Used for account login, chat messages, and downloading game assets, where reliability is more important than speed.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="scenario-frequent-updates">Scenario: Frequent Updates to Multiple Receivers</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p><strong>Protocol Choice: UDP.</strong></p>
+                            <p><strong>Reasoning:</strong>
+                                <ul>
+                                    <li><strong>Efficiency for Multiple Receivers:</strong> UDP supports <strong>multicast</strong> and <strong>broadcast</strong>. A single packet can be sent from the source and delivered by the network to multiple subscribed receivers (multicast) or all hosts on a subnet (broadcast). This is vastly more efficient than establishing and maintaining a separate TCP connection to every single receiver.</li>
+                                    <li><strong>Low Overhead:</strong> For frequent, small updates (e.g., stock prices, game state), the overhead of TCP's 20-byte header and acknowledgment packets would be significant compared to the payload size. UDP's 8-byte header is much more efficient.</li>
+                                    <li><strong>State Management:</strong> TCP would require the server to manage the state (buffers, timers, sequence numbers) for every single receiver, which would not scale well.</li>
+                                </ul>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="scenario-airplane">Scenario: Airplane Location Reporting</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p><strong>Protocol Choice: UDP.</strong></p>
+                            <p><strong>Reasoning:</strong>
+                                <ul>
+                                    <li><strong>Idempotency and Timeliness:</strong> Each location report is a self-contained, independent piece of information. A report from 5 minutes ago is now stale; the latest report is what matters. If a UDP packet is lost, it's better to wait for the next update in 5 minutes than to delay new data by trying to retransmit the old, outdated report. TCP's reliability mechanisms would be counterproductive.</li>
+                                    <li><strong>Simplicity and Cost:</strong> The communication might happen over expensive or low-bandwidth satellite links. UDP's minimal header and lack of ACK traffic reduce bandwidth consumption and cost. The protocol is simpler to implement on potentially resource-constrained avionics hardware.</li>
+                                    <li><strong>No Connection State:</strong> Airplanes may move between network coverage areas. UDP's connectionless nature means it doesn't need to re-establish a session if connectivity is temporarily lost, it just sends the next datagram when it can.</li>
+                                </ul>
+                            </p>
+                        </div>
+                    </div>
+                     <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="scenario-dns">Scenario: DNS Queries over UDP</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>DNS primarily uses UDP for its speed and efficiency. However, this introduces potential issues.</p>
+                            <h4>Potential Issues:</h4>
+                            <ol>
+                                <li><strong>Packet Loss:</strong> A DNS query or response can be lost in transit. Since UDP is unreliable, neither side would know.</li>
+                                <li><strong>Response Truncation:</strong> If a DNS response is too large to fit in a single UDP packet (traditionally > 512 bytes), the server will send a truncated response with the `TC` (Truncation) bit set.</li>
+                                <li><strong>IP Fragmentation:</strong> If the response is large but still sent over UDP, it may be fragmented at the IP layer. As discussed before, loss of a single fragment means the entire response is lost.</li>
+                                <li><strong>Spoofing/Cache Poisoning:</strong> Because UDP is connectionless, an attacker can more easily spoof the source IP of a DNS server and send a malicious response to a client, potentially poisoning its cache.</li>
+                            </ol>
+                            <h4>Mitigations in Practice:</h4>
+                            <ol>
+                                <li><strong>Application-Level Retry:</strong> The DNS client (resolver) implements a simple timeout and retry mechanism. If no response is received after a few seconds, it re-sends the query.</li>
+                                <li><strong>Fallback to TCP:</strong> If a client receives a truncated (`TC`) response, it is required to retry the same query over TCP, which can handle arbitrarily large responses reliably.</li>
+                                <li><strong>EDNS (Extension Mechanisms for DNS):</strong> EDNS allows clients to specify a larger UDP buffer size they can handle, reducing the need for truncation and fallback to TCP.</li>
+                                <li><strong>DNSSEC (DNS Security Extensions):</strong> Mitigates spoofing by using digital signatures to verify the authenticity and integrity of DNS responses.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Section: Security -->
+                <section id="security">
+                     <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">Security Considerations</h2>
+                        </div>
+                    </div>
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="udp-security">UDP Security: Spoofing & Amplification</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>UDP's connectionless nature makes it more susceptible to certain types of attacks.</p>
+                            <ul>
+                                <li><strong>IP Spoofing:</strong> An attacker can easily forge the source IP address in a UDP datagram because there is no handshake to validate the source. The receiver has no built-in way to verify that the packet actually came from the claimed sender.</li>
+                                <li><strong>Amplification Attacks (DDoS):</strong> This exploits UDP and spoofing. An attacker sends a small query to a public server (like a misconfigured DNS or NTP server) but spoofs the source IP to be the victim's IP. The server then sends a much larger response to the victim. The attacker "amplifies" their attack traffic using the server. A small request from the attacker results in a large flood of traffic hitting the victim.
+                                <pre>
+Attacker --------(small query, spoofed source=Victim)--------> Public Server
+   |                                                                  |
+   |                                                                  |
+   +<----------------(large response)--------------------------------+ Victim
+</pre>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="tcp-security">TCP Security Implications</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>While the three-way handshake makes spoofing harder, TCP is not immune to attack.</p>
+                             <ul>
+                                <li><strong>SYN Flood Attack (DDoS):</strong> An attacker exploits the connection setup process. They send a high volume of `SYN` packets to a server, often with spoofed source IPs. The server responds with `SYN-ACK` and allocates resources (memory for the connection state) while waiting for the final `ACK`. Since the final `ACK` never arrives (the spoofed IP is unreachable or not participating), the server's resources become exhausted keeping track of these half-open connections, and it can no longer accept legitimate requests.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Section: Coding -->
+                <section id="coding">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">Coding & Implementation</h2>
+                        </div>
+                    </div>
+                     <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="socket-differences">Socket Differences: TCP vs. UDP</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>The choice of protocol deeply impacts how sockets are used in an application.</p>
+                            <h4>TCP Sockets (<code>SOCK_STREAM</code>)</h4>
+                            <ul>
+                                <li><strong>Type:</strong> A stream-oriented socket. It provides a continuous, reliable, bidirectional stream of data. The OS handles packetization, reordering, and retransmissions.</li>
+                                <li><strong>Connection:</strong> Requires a connection to be established (<code>connect()</code> on the client, <code>listen()</code> and <code>accept()</code> on the server) before data can be sent.</li>
+                                <li><strong>Data Transfer:</strong> Uses <code>send()</code> and <code>recv()</code> (or <code>write()</code>/<code>read()</code>). The calls do not necessarily correspond to single packets. You might need to call <code>recv()</code> multiple times to get a single message sent by the peer.</li>
+                                <li><strong>Analogy:</strong> A telephone call. You must dial and establish a connection before you can talk.</li>
+                            </ul>
+                            <h4>UDP Sockets (<code>SOCK_DGRAM</code>)</h4>
+                            <ul>
+                                <li><strong>Type:</strong> A datagram-oriented socket. It works with discrete messages (datagrams).</li>
+                                <li><strong>Connection:</strong> Connectionless. No initial setup is required.</li>
+                                <li><strong>Data Transfer:</strong> Uses <code>sendto()</code> and <code>recvfrom()</code>. Each call to <code>sendto()</code> sends one UDP datagram. Each call to <code>recvfrom()</code> reads one entire datagram. The destination address must be specified with each <code>sendto()</code> call.</li>
+                                <li><strong>Analogy:</strong> Sending a letter in the mail. You write the address on each one and drop it in the mailbox.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="udp-code-example">Code Example: UDP Client & Server (Python)</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>This simple Python example demonstrates the core logic of a UDP server that listens for a message and a client that sends one.</p>
+                            <h4>UDP Server (<code>udp_server.py</code>)</h4>
+<pre><code class="language-python">
+import socket
+
+# Server configuration
+HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
+PORT = 65432        # Port to listen on (non-privileged ports are > 1023)
+
+# Create a UDP socket
+# AF_INET is for IPv4, SOCK_DGRAM is for UDP
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+    # Bind the socket to the address and port
+    s.bind((HOST, PORT))
+    print(f"Server listening on {HOST}:{PORT}")
+
+    while True:
+        # Wait for a message. recvfrom returns the data and the address of the client
+        data, addr = s.recvfrom(1024)  # buffer size is 1024 bytes
+        print(f"Received message: '{data.decode()}' from {addr}")
+
+        # Echo the message back to the client, converting to uppercase
+        response = data.upper()
+        s.sendto(response, addr)
+        print(f"Sent response: '{response.decode()}' to {addr}")
+
+</code></pre>
+                            <h4>UDP Client (<code>udp_client.py</code>)</h4>
+<pre><code class="language-python">
+import socket
+
+# Server configuration
+HOST = '127.0.0.1'
+PORT = 65432
+MESSAGE = b'Hello, UDP Server!'
+
+# Create a UDP socket
+with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+    # Send a message to the server
+    s.sendto(MESSAGE, (HOST, PORT))
+    print(f"Sent message: '{MESSAGE.decode()}'")
+
+    # Wait for the response
+    data, server_addr = s.recvfrom(1024)
+    print(f"Received response: '{data.decode()}' from {server_addr}")
+</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h3 class="mdl-card__title-text" id="implementing-udp-reliability-code">Implementing Custom Reliability on UDP</h3>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>To implement reliability for a chat application on UDP, you need to add mechanisms to handle lost and out-of-order messages. Here is a conceptual approach.</p>
+                            <h4>The Approach:</h4>
+                            <ol>
+                                <li><strong>Packet Format:</strong> Define a custom header for your data payload.
+                                <pre>
+[SeqNum (4 bytes)][ACK_Num (4 bytes)][Flags (1 byte)][  Message Data  ]</pre>
+                                <code>Flags</code> could have bits for <code>DATA</code>, <code>ACK</code>, <code>FIN</code>, etc.</li>
+                                <li><strong>Sender Logic:</strong>
+                                    <ul>
+                                        <li>Maintain a `next_seq_num` counter. Increment it for each new data packet sent.</li>
+                                        <li>Store sent but unacknowledged packets in a buffer (an "in-flight window").</li>
+                                        <li>For each packet in the window, start a retransmission timer.</li>
+                                        <li>When an ACK is received, remove the corresponding packet from the buffer.</li>
+                                        <li>If a timer expires, retransmit the packet from the buffer and restart its timer.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Receiver Logic:</strong>
+                                    <ul>
+                                        <li>Maintain an `expected_seq_num`.</li>
+                                        <li>If a packet arrives with `seq_num == expected_seq_num`, process it, increment `expected_seq_num`, and send an ACK for the new `expected_seq_num`.</li>
+                                        <li>If a packet arrives with `seq_num > expected_seq_num` (out-of-order), buffer it. Send a duplicate ACK for the current `expected_seq_num` to signal a missing packet.</li>
+                                        <li>If a packet arrives with `seq_num < expected_seq_num`, it's a duplicate. Discard it but re-send the ACK for the current `expected_seq_num`.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            <h4>Challenges:</h4>
+                            <ul>
+                                <li><strong>Timer Management:</strong> Choosing a good Retransmission Timeout (RTO) value is difficult. It should be based on a dynamically calculated Round-Trip Time (RTT).</li>
+                                <li><strong>Congestion Control:</strong> This simple design lacks congestion control. A naive implementation could flood the network, making things worse. A robust solution needs to implement its own version of slow start and congestion avoidance.</li>
+                                <li><strong>Flow Control:</strong> The design also lacks flow control, potentially overwhelming the receiver.</li>
+                            </ul>
+                            <div class="note"><p>This exercise essentially involves re-inventing many of TCP's core features. It highlights the complexity that TCP handles for us automatically.</p></div>
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const toggleButton = document.getElementById('dark-mode-toggler');
+        const body = document.body;
+
+        // Check for saved user preference
+        if (localStorage.getItem('theme') === 'dark') {
+            body.classList.add('dark-mode');
+            toggleButton.querySelector('.material-icons').textContent = 'brightness_7';
+        }
+
+        toggleButton.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            
+            let theme = 'light';
+            let icon = 'brightness_4';
+
+            if (body.classList.contains('dark-mode')) {
+                theme = 'dark';
+                icon = 'brightness_7';
+            }
+            localStorage.setItem('theme', theme);
+            toggleButton.querySelector('.material-icons').textContent = icon;
+        });
+    </script>
+</body>
+</html>
