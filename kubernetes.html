@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 5: Kubernetes - The Grand Conductor of Containers</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Fira+Code:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .mdl-layout__header {
+            background-color: #3f51b5; /* Indigo */
+            color: white;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .mdl-layout__header .mdl-layout-title {
+            font-size: 1.8em;
+        }
+
+        .mdl-layout__drawer {
+            border-right: 1px solid #ddd;
+             padding-top: 64px;
+        }
+
+        .mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
+            font-size: 1.0em;
+            color: #424242;
+            padding: 10px 16px;
+            font-weight: 500;
+            display: block; /* Ensure full-width click area */
+        }
+         .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+            background-color: #e8eaf6; /* Light indigo */
+        }
+         .mdl-layout__drawer .mdl-navigation .mdl-navigation__link.active-link {
+            background-color: #c5cae9; /* A bit darker for active */
+            font-weight: 700;
+            color: #303f9f;
+        }
+
+        .page-content {
+            padding: 20px;
+            max-width: 900px;
+            margin: 20px auto;
+            padding-top: 84px;
+        }
+
+        .mdl-card {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+        }
+
+        section[id] {
+             scroll-margin-top: 80px;
+        }
+
+        .mdl-card__supporting-text {
+            color: #333;
+            font-size: 1.05em;
+        }
+        .mdl-card__title-text {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        h1, h2, h3, h4 {
+            color: #303f9f; /* Darker Indigo */
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        h1 { font-size: 2.2em; border-bottom: 2px solid #c5cae9; padding-bottom: 10px; }
+        h2 { font-size: 1.8em; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }
+        h3 { font-size: 1.4em; }
+        h4 { font-size: 1.2em; }
+
+
+        pre, code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        }
+
+        pre {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        :not(pre) > code {
+            background-color: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #c51162;
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background-color: transparent; padding: 0; border-radius: 0; color: inherit; font-size: inherit;
+        }
+
+        .note {
+            background-color: rgba(255, 249, 196, 0.85);
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .note p { margin: 0; }
+        .note strong { color: #c79100; }
+
+        table.mdl-data-table {
+            width: 100%; margin-top: 15px; margin-bottom: 15px; border: 1px solid #ddd;
+        }
+        table.mdl-data-table th {
+            background-color: #e8eaf6; color: #303f9f; font-weight: bold;
+        }
+        table.mdl-data-table td, table.mdl-data-table th {
+            text-align: left;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #121212; color: #e0e0e0;
+        }
+        .dark-mode .mdl-layout__header {
+            background-color: #1f1f1f;
+        }
+        .dark-mode .mdl-card {
+            background-color: rgba(40, 40, 40, 0.95); color: #e0e0e0; border: 1px solid #2a2a2a;
+        }
+        .dark-mode .mdl-card__supporting-text { color: #e0e0e0; }
+        .dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4 { color: #bb86fc; }
+        .dark-mode h1 { border-bottom-color: #333; }
+        .dark-mode h2 { border-bottom-color: #2a2a2a; }
+        .dark-mode .note {
+            background-color: rgba(50, 50, 30, 0.9); border-left-color: #fdd835; color: #e0e0e0;
+        }
+        .dark-mode .note strong { color: #f5c92c; }
+        .dark-mode :not(pre) > code {
+            background-color: #333; color: #f06292;
+        }
+        .dark-mode .mdl-layout__drawer {
+            background-color: #1e1e1e; border-right: 1px solid #2a2a2a;
+        }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link { color: #bb86fc; }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover { background-color: #333; }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link.active-link { background-color: #3a3a3a; color: #e1d8ff; }
+        .dark-mode table.mdl-data-table { border: 1px solid #444; }
+        .dark-mode table.mdl-data-table th { background-color: #333; color: #bb86fc; }
+        .dark-mode table.mdl-data-table tr:nth-child(even) { background-color: #282828; }
+
+        .dark-mode-toggle {
+            position: fixed; bottom: 20px; right: 20px; z-index: 10001;
+        }
+
+        .ascii-diagram {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            background-color: #f9f9f9;
+            color: #333;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.3;
+            white-space: pre;
+        }
+        .dark-mode .ascii-diagram {
+            background-color: #1e1e1e; color: #ccc; border: 1px solid #444;
+        }
+
+        .mdl-layout__drawer .mdl-navigation { padding-top: 0; }
+        .mdl-layout__drawer .mdl-navigation .mdl-navigation__link.sub-link { padding-left: 32px; font-size: 0.95em; }
+        .mdl-layout__drawer .mdl-navigation .mdl-navigation__link.main-link { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+        <header class="mdl-layout__header">
+            <div class="mdl-layout__header-row">
+                <span class="mdl-layout-title">Chapter 5: Kubernetes - The Conductor</span>
+                <div class="mdl-layout-spacer"></div>
+            </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <span class="mdl-layout-title">Chapter Sections</span>
+            <nav class="mdl-navigation">
+                <a class="mdl-navigation__link main-link" href="#intro">1. The Symphony of Scale</a>
+                <a class="mdl-navigation__link main-link" href="#core-concepts">2. Core Concepts: The Instruments</a>
+                <a class="mdl-navigation__link sub-link" href="#pods">Pods: The Atoms</a>
+                <a class="mdl-navigation__link sub-link" href="#replicaset-deployment">ReplicaSet vs Deployment</a>
+                <a class="mdl-navigation__link main-link" href="#workloads">3. Managing Workloads</a>
+                <a class="mdl-navigation__link sub-link" href="#deployment-statefulset">Deployment vs StatefulSet</a>
+                <a class="mdl-navigation__link sub-link" href="#daemonset">DaemonSets</a>
+                <a class="mdl-navigation__link main-link" href="#networking">4. Cluster Networking</a>
+                <a class="mdl-navigation__link sub-link" href="#services">Services</a>
+                <a class="mdl-navigation__link sub-link" href="#ingress">Ingress & Ingress Controllers</a>
+                <a class="mdl-navigation__link sub-link" href="#network-policies">Network Policies</a>
+                <a class="mdl-navigation__link sub-link" href="#headless-services">Headless Services</a>
+                <a class="mdl-navigation__link sub-link" href="#kube-proxy">Role of kube-proxy</a>
+                <a class="mdl-navigation__link main-link" href="#config-storage">5. Config & Storage</a>
+                <a class="mdl-navigation__link sub-link" href="#configmaps-secrets">ConfigMaps & Secrets</a>
+                <a class="mdl-navigation__link sub-link" href="#pvs-pvcs">Persistent Volumes (PV & PVC)</a>
+                <a class="mdl-navigation__link sub-link" href="#storage-classes">StorageClasses</a>
+                <a class="mdl-navigation__link main-link" href="#health-scaling">6. Health & Scaling</a>
+                <a class="mdl-navigation__link sub-link" href="#probes">Liveness & Readiness Probes</a>
+                <a class="mdl-navigation__link sub-link" href="#hpa">Horizontal Pod Autoscaler (HPA)</a>
+                <a class="mdl-navigation__link sub-link" href="#pdb">PodDisruptionBudget (PDB)</a>
+                <a class="mdl-navigation__link main-link" href="#scheduling-resources">7. Scheduling & Resources</a>
+                <a class="mdl-navigation__link sub-link" href="#kube-scheduler">The Kube-Scheduler</a>
+                <a class="mdl-navigation__link sub-link" href="#selectors-affinity">Node Selectors & Affinity</a>
+                <a class="mdl-navigation__link sub-link" href="#taints-tolerations">Taints & Tolerations</a>
+                <a class="mdl-navigation__link sub-link" href="#resource-quotas">Resource Quotas</a>
+                <a class="mdl-navigation__link main-link" href="#security">8. Security</a>
+                <a class="mdl-navigation__link sub-link" href="#rbac">RBAC: Roles & Bindings</a>
+                <a class="mdl-navigation__link sub-link" href="#securing-secrets">Securing Secrets</a>
+                <a class="mdl-navigation__link sub-link" href="#host-security">hostNetwork & hostPort</a>
+                <a class="mdl-navigation__link main-link" href="#operations">9. Operations & Troubleshooting</a>
+                <a class="mdl-navigation__link sub-link" href="#updates-rollbacks">Updates & Rollbacks</a>
+                <a class="mdl-navigation__link sub-link" href="#canary-deployments">Canary Deployments</a>
+                <a class="mdl-navigation__link sub-link" href="#monitoring">Monitoring with `kubectl top`</a>
+                <a class="mdl-navigation__link sub-link" href="#troubleshoot-pending">Troubleshooting: "Pending" Pods</a>
+                <a class="mdl-navigation__link sub-link" href="#troubleshoot-crashloop">Troubleshooting: "CrashLoopBackOff"</a>
+                <a class="mdl-navigation__link sub-link" href="#init-containers">Init Containers</a>
+                <a class="mdl-navigation__link sub-link" href="#etcd-backup">etcd Backup & Restore</a>
+                <a class="mdl-navigation__link main-link" href="#hard-questions">10. Advanced Design & Strategy</a>
+                <a class="mdl-navigation__link sub-link" href="#hq-stateful-db">Designing a Stateful DB</a>
+                <a class="mdl-navigation__link sub-link" href="#hq-secure-cluster">Securing a Cluster</a>
+                <a class="mdl-navigation__link sub-link" href="#hq-network-latency">Troubleshooting Network Latency</a>
+                <a class="mdl-navigation__link sub-link" href="#hq-custom-dns">Customizing CoreDNS</a>
+                <a class="mdl-navigation__link sub-link" href="#hq-overcommitted">Optimizing Overcommitted Nodes</a>
+                <a class="mdl-navigation__link sub-link" href="#hq-service-mesh">Implementing a Service Mesh</a>
+                <a class="mdl-navigation__link sub-link" href="#hq-node-failure">Handling Node Failure</a>
+                <a class="mdl-navigation__link sub-link" href="#hq-multi-cluster">Multi-Cluster DR</a>
+            </nav>
+        </div>
+        <main class="mdl-layout__content">
+            <div class="page-content">
+
+                <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored dark-mode-toggle" id="dark-mode-toggle">
+                    <i class="material-icons">brightness_4</i>
+                </button>
+
+                <section id="intro">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h1 id="symphony" class="mdl-card__title-text">1. The Symphony of Scale: Why Kubernetes?</h1>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Imagine you are a conductor of a grand orchestra. In the beginning, you had just a single violinist—your first application. It was easy to manage. You told the violinist when to play and when to stop. This is like running an app on a single server.</p>
+                            <p>But your music became popular. You needed more violins, then cellos, trumpets, and percussion. Suddenly, you're not just managing one musician; you're managing dozens, each with different needs. Some need to play louder (more CPU), some need specific sheet music (configuration), and they all need to play in harmony (networking).</p>
+                            <p>This is the challenge of modern applications. We don't run one monolithic app anymore; we run dozens or hundreds of containerized microservices. Manually managing them is a chaotic nightmare. You need a conductor.</p>
+                            <p><strong>Kubernetes is that conductor.</strong></p>
+                            <p>At its core, Kubernetes (often abbreviated as K8s) is a container orchestration platform. It automates the deployment, scaling, and management of containerized applications. You don't tell Kubernetes *how* to do something; you tell it the *desired state*—"I want three copies of my web server running at all times"—and Kubernetes works tirelessly to make it so. If a server fails, it moves the musicians to a new one. If the audience grows, it adds more musicians. It handles the complex choreography so you can focus on writing the music (your code).</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="core-concepts">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 id="instruments" class="mdl-card__title-text">2. Core Concepts: The Instruments of the Orchestra</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>To understand Kubernetes, we must first learn about its fundamental building blocks. These are the "instruments" our conductor works with.</p>
+                            
+                            <h3 id="pods">Pods: The Atomic Unit of Deployment</h3>
+                            <p>The smallest deployable unit in Kubernetes is not a container, but a <strong>Pod</strong>. Think of a Pod as a logical host for one or more tightly coupled containers.</p>
+                            <ul>
+                                <li><strong>Shared Context:</strong> Containers within the same Pod share the same network namespace (they can communicate via <code>localhost</code>) and storage volumes.</li>
+                                <li><strong>One-to-One is Common:</strong> Most of the time, a Pod runs a single container.</li>
+                                <li><strong>Multi-Container Pods (Sidecars):</strong> You use multi-container Pods when you have a main application container and a helper "sidecar" container that performs a supporting task, like logging, monitoring, or acting as a proxy. They are managed as a single unit.</li>
+                            </ul>
+<div class="ascii-diagram">
+Pod
++------------------------------------+
+|                                    |
+|   +-----------+   +-----------+    |
+|   | Container |   |  Sidecar  |    |
+|   |   (App)   |-->| (Logging) |    |
+|   +-----------+   +-----------+    |
+|                                    |
+|        Shared Network & Volumes    |
++------------------------------------+
+</div>
+
+                            <h3 id="replicaset-deployment">ReplicaSet vs. Deployment: The Section Leaders</h3>
+                            <p>A Pod is fragile. If the node it's on fails, the Pod is gone. We need a way to ensure our desired number of Pods is always running. This is where Deployments and ReplicaSets come in.</p>
+                            
+                            <p>A <strong>ReplicaSet</strong> is a simple controller whose only job is to maintain a stable set of replica Pods running at any given time. You tell it, "I need 3 Nginx Pods," and it will create and maintain exactly 3.</p>
+
+                            <p>However, you almost never create a ReplicaSet directly. You use a <strong>Deployment</strong>.</p>
+                            
+                            <p>A <strong>Deployment</strong> is a higher-level controller that manages ReplicaSets. Think of it as the "Violin Section Leader." It provides declarative updates to Pods, enabling sophisticated features like:</p>
+                            <ul>
+                                <li><strong>Rolling Updates:</strong> Update your application with zero downtime.</li>
+                                <li><strong>Rollbacks:</strong> Instantly revert to a previous version if something goes wrong.</li>
+                                <li><strong>Desired State Management:</strong> It uses ReplicaSets under the hood to manage the Pods.</li>
+                            </ul>
+                            
+                            <div class="note">
+                                <p><strong>Key Difference:</strong> A <code>ReplicaSet</code> just ensures a number of replicas exist. A <code>Deployment</code> manages <code>ReplicaSet</code>s to provide features like rolling updates and history. You should always prefer using a <code>Deployment</code>.</p>
+                            </div>
+<div class="ascii-diagram">
++------------+
+| Deployment |
++------------+
+      | Manages
+      v
++-----------------+      +-----------------+
+| New ReplicaSet  |      | Old ReplicaSet  | (Scaling down to 0)
+| (replicas: 3)   |      | (replicas: 0)   |
++-----------------+      +-----------------+
+      | Creates / Manages    |
+      v                      v
++-------+ +-------+ +-------+
+| Pod 1 | | Pod 2 | | Pod 3 |
++-------+ +-------+ +-------+
+</div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="workloads">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                             <h2 class="mdl-card__title-text">3. Managing Workloads: Different Sections for Different Music</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Not all applications are the same. A stateless web server has different needs than a stateful database. Kubernetes provides different workload "controllers" for these scenarios.</p>
+
+                            <h3 id="deployment-statefulset">Deployment vs. StatefulSet: Cattle vs. Pets</h3>
+                            <p>This is a classic distinction in the Kubernetes world.</p>
+                            <p>A <strong>Deployment</strong> is for <strong>stateless</strong> applications (the "cattle"). These are interchangeable replicas. If one Pod dies, Kubernetes creates another one with a new name, new IP, and fresh storage. It doesn't matter *which* Pod serves the request. Examples: web servers, API gateways, stateless microservices.</p>
+                            <p>A <strong>StatefulSet</strong> is for <strong>stateful</strong> applications (the "pets"). These Pods are not interchangeable. They require stable, unique identities and persistent storage that "follows" them. Use a StatefulSet when your application needs:</p>
+                            <ul>
+                                <li><strong>Stable, Unique Network Identifiers:</strong> A Pod will always have the same hostname, like <code>db-0</code>, <code>db-1</code>, etc., even if it's rescheduled.</li>
+                                <li><strong>Stable, Persistent Storage:</strong> Each Pod gets its own dedicated Persistent Volume Claim. If <code>db-0</code> is rescheduled, it will re-attach to the same storage it had before.</li>
+                                <li><strong>Ordered, Graceful Deployment and Scaling:</strong> Pods are created one at a time (0, then 1, then 2) and terminated in reverse order (2, then 1, then 0). This is critical for clustered systems like databases (e.g., ZooKeeper, Elasticsearch, Cassandra) that need to establish quorum.</li>
+                            </ul>
+                            
+                            <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+                                <thead>
+                                    <tr>
+                                        <th class="mdl-data-table__cell--non-numeric">Feature</th>
+                                        <th class="mdl-data-table__cell--non-numeric">Deployment</th>
+                                        <th class="mdl-data-table__cell--non-numeric">StatefulSet</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="mdl-data-table__cell--non-numeric">Use Case</td>
+                                        <td>Stateless Apps (e.g., Nginx)</td>
+                                        <td>Stateful Apps (e.g., MySQL, Kafka)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="mdl-data-table__cell--non-numeric">Pod Identity</td>
+                                        <td>Ephemeral (e.g., <code>web-xyz12</code>)</td>
+                                        <td>Stable & Ordinal (e.g., <code>db-0</code>)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="mdl-data-table__cell--non-numeric">Storage</td>
+                                        <td>Shared, ephemeral, or single PV</td>
+                                        <td>Unique PV per Pod</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="mdl-data-table__cell--non-numeric">Scaling</td>
+                                        <td>Random order</td>
+                                        <td>Ordered (0..N)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            
+                            <h3 id="daemonset">DaemonSets: A Musician on Every Stage</h3>
+                            <p>Sometimes you need to run a copy of a Pod on all (or a subset of) nodes in your cluster. This is the job of a <strong>DaemonSet</strong>.</p>
+                            <p>A DaemonSet ensures that as nodes are added to the cluster, new Pods are added to them. When nodes are removed, those Pods are garbage collected. It's perfect for cluster-level infrastructure tasks.</p>
+                            <p><strong>Use Cases:</strong></p>
+                            <ul>
+                                <li><strong>Log Collectors:</strong> Running an agent like Fluentd or Logstash on every node to collect logs.</li>
+                                <li><strong>Monitoring Agents:</strong> Deploying Prometheus Node Exporter or Datadog Agent on every node.</li>
+                                <li><strong>Cluster Storage:</strong> Running a storage daemon like Ceph or GlusterFS on each node.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="networking">
+                     <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">4. Cluster Networking: Making the Music Heard</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Having Pods is great, but they need to talk to each other and to the outside world. Kubernetes networking can seem complex, but it's built on a few key ideas.</p>
+
+                            <h3 id="services">Services: The Stable Address Book</h3>
+                            <p>Pods are ephemeral—they can be created and destroyed, and their IP addresses change. If your frontend Pods need to talk to your backend Pods, you can't rely on IP addresses. You need a stable endpoint.</p>
+                            <p>A <strong>Service</strong> provides this. It defines a logical set of Pods and a policy by which to access them. A Service gets a stable IP address (the "Cluster IP") and a DNS name that doesn't change.</p>
+<div class="ascii-diagram">
++-------------+      +----------------+
+| Frontend Pod|----->| Backend Service|
++-------------+      | (Stable IP)    |
+                     +----------------+
+                           | Load Balances
+         +-----------------+-----------------+
+         |                 |                 |
+         v                 v                 v
++-------------+   +-------------+   +-------------+
+| Backend Pod 1|   | Backend Pod 2|   | Backend Pod 3|
+| (IP: 10.1.1.2)|   | (IP: 10.1.1.3)|   | (IP: 10.1.2.2)|
++-------------+   +-------------+   +-------------+
+</div>
+                            <p>There are three main types of Services:</p>
+                            <ul>
+                                <li><strong>ClusterIP:</strong> (Default) Exposes the Service on an internal-only IP. This Service is only reachable from within the cluster. This is the perfect type for internal communication, like a backend database Service.</li>
+                                <li><strong>NodePort:</strong> Exposes the Service on a static port on each Node's IP address (the <code>NodePort</code>). A <code>ClusterIP</code> Service is automatically created as well. You can contact the <code>NodePort</code> Service from outside the cluster by requesting <code><NodeIP>:<NodePort></code>. Good for development or quick tests.</li>
+                                <li><strong>LoadBalancer:</strong> Exposes the Service externally using a cloud provider's load balancer. A <code>NodePort</code> and <code>ClusterIP</code> Service are automatically created, and the external load balancer routes to them. This is the standard way to expose a service to the internet in a cloud environment (AWS, GCP, Azure).</li>
+                            </ul>
+                            
+                            <h3 id="ingress">Ingress & Ingress Controllers: The Front Door</h3>
+                            <p>Using a <code>LoadBalancer</code> Service for every application you want to expose can be expensive. Imagine needing 20 external load balancers. An <strong>Ingress</strong> is a smarter, more efficient solution.</p>
+                            <p>An Ingress is an API object that manages external access to the services in a cluster, typically HTTP. It acts as a layer 7 (HTTP) router, allowing you to define rules like:</p>
+                            <ul>
+                                <li>Route <code>http://example.com/api</code> to the <code>api-service</code>.</li>
+                                <li>Route <code>http://blog.example.com</code> to the <code>blog-service</code>.</li>
+                                <li>Handle TLS termination.</li>
+                            </ul>
+                            <p>However, the Ingress object itself does nothing. You need an <strong>Ingress Controller</strong> to fulfill the Ingress rules. The controller is a Pod (usually a Deployment) that watches the Kubernetes API for Ingress objects and configures a reverse proxy (like Nginx or Traefik) accordingly.</p>
+                            <p><strong>Nginx vs. Traefik Ingress Controllers:</strong></p>
+                            <ul>
+                                <li><strong>Nginx:</strong> The most popular and battle-tested. It's highly performant and configurable, but configuration reloads can be a bit slower. It uses a template-based system to generate the Nginx config file.</li>
+                                <li><strong>Traefik:</strong> A modern cloud-native reverse proxy. It's known for its ease of use and automatic service discovery. It integrates tightly with Kubernetes and can automatically detect new Ingress objects and configure itself without a hard reload. It's often simpler to get started with for common use cases.</li>
+                            </ul>
+
+                            <h3 id="network-policies">Network Policies: The Firewall</h3>
+                            <p>By default, all Pods in a Kubernetes cluster can communicate with all other Pods. This is simple but not secure. <strong>Network Policies</strong> act like a firewall for Pods, allowing you to specify how groups of Pods are allowed to communicate with each other and other network endpoints.</p>
+                            <p>With Network Policies, you can implement rules like:</p>
+                            <ul>
+                                <li>Isolate a namespace: No traffic in or out by default.</li>
+                                <li>Allow frontend Pods to talk to backend Pods, but not to the database Pods.</li>
+                                <li>Allow Pods in a specific namespace to talk to each other, but block traffic from other namespaces.</li>
+                            </ul>
+                            <div class="note">
+                                <p><strong>Important:</strong> Network Policies are implemented by the Container Network Interface (CNI) plugin. If your CNI (like Flannel without extensions) doesn't support Network Policies, creating them will have no effect.</p>
+                            </div>
+
+                            <h3 id="headless-services">Headless Services: Service Discovery Without the Proxy</h3>
+                            <p>What if you don't want load balancing? What if you want to connect directly to a specific Pod? This is where a <strong>Headless Service</strong> comes in.</p>
+                            <p>By setting <code>clusterIP: None</code> in a Service definition, you create a Headless Service. Kubernetes won't allocate a ClusterIP and won't do any proxying. Instead, it creates DNS A records that point directly to the IPs of the Pods backing the service. This is commonly used with StatefulSets, allowing a client to discover and connect to each member of the stateful application (e.g., <code>db-0.my-db-service</code>, <code>db-1.my-db-service</code>) directly.</p>
+
+                            <h3 id="kube-proxy">The Role of kube-proxy</h3>
+                            <p><code>kube-proxy</code> is a daemon that runs on every single node in your cluster. Its job is to make Services work. It watches the Kubernetes API for new Services and Endpoints (the list of Pod IPs for a Service). It then translates this information into networking rules on the node, telling it how to forward traffic destined for a Service's virtual ClusterIP to the correct backend Pods. It typically does this using one of three modes: <code>iptables</code>, <code>IPVS</code>, or <code>userspace</code> (rarely used).</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="config-storage">
+                     <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">5. Configuration & Storage: The Sheet Music and Instruments</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Your applications need configuration and a place to store data. Hardcoding this into a container image is a terrible practice. Kubernetes provides objects to manage this cleanly.</p>
+                            
+                            <h3 id="configmaps-secrets">ConfigMaps & Secrets: Injecting Configuration</h3>
+                            <p><strong>ConfigMaps</strong> are used to store non-confidential configuration data as key-value pairs. Think of them as a place for your application's settings, feature flags, or endpoint URLs.</p>
+                            <p><strong>Secrets</strong> are almost identical to ConfigMaps but are intended for sensitive data like passwords, OAuth tokens, and SSH keys. The key difference is how Kubernetes treats them:</p>
+                            <ul>
+                                <li><strong>Encoding:</strong> Secret data is stored as base64 encoded strings. <strong>This is encoding, not encryption.</strong> Anyone with access to the Secret object can easily decode it.</li>
+                                <li><strong>Usage:</strong> Kubernetes can prevent Secrets from being exposed in certain ways (e.g., not showing their values in <code>kubectl describe</code> by default) and can be configured to encrypt them at rest in etcd.</li>
+                                <li><strong>Memory:</strong> When mounted as volumes, Secrets are stored in a memory-backed filesystem (<code>tmpfs</code>) on the node, not written to disk, to reduce the risk of exposure.</li>
+                            </ul>
+                            <p>You can inject data from both ConfigMaps and Secrets into Pods as either <strong>environment variables</strong> or <strong>mounted files (volumes)</strong>.</p>
+                            
+                            <h4>Managing Environment Variables</h4>
+                            <p>There are two main ways to set environment variables:</p>
+                            <ol>
+                                <li><strong><code>value</code>:</strong> Directly sets a static string.
+                                <pre><code class="language-yaml">
+env:
+- name: LOG_LEVEL
+  value: "DEBUG"
+                                </code></pre>
+                                </li>
+                                <li><strong><code>valueFrom</code>:</strong> Pulls the value from another source, like a ConfigMap or a Secret. This is the preferred way to manage configuration dynamically.
+                                <pre><code class="language-yaml">
+env:
+- name: DATABASE_URL
+  valueFrom:
+    configMapKeyRef:
+      name: my-app-config
+      key: db.url
+- name: API_KEY
+  valueFrom:
+    secretKeyRef:
+      name: my-api-secrets
+      key: api-key
+                                </code></pre>
+                                </li>
+                            </ol>
+                            
+                            <h3 id="pvs-pvcs">Persistent Volumes (PVs) and Persistent Volume Claims (PVCs)</h3>
+                            <p>Containers are ephemeral, but data often needs to persist. Kubernetes abstracts storage using two key objects:</p>
+                            <p>A <strong>Persistent Volume (PV)</strong> is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using a StorageClass. It is a resource in the cluster, just like a CPU or memory. A PV is independent of any individual Pod's lifecycle.</p>
+                            <p>A <strong>Persistent Volume Claim (PVC)</strong> is a request for storage by a user. It is similar to a Pod. Pods consume node resources, and PVCs consume PV resources. A user creates a PVC specifying the size and access mode (e.g., ReadWriteOnce) they need, and Kubernetes finds a matching PV to bind to it.</p>
+
+<div class="ascii-diagram">
++-------------+      Requests Storage      +-----+      Binds to      +---------------------+
+|     Pod     |--------------------------->| PVC |------------------->|         PV          |
+| Needs 10Gi  |      "I need 10Gi"       | 10Gi|      Finds match     | (e.g., EBS Volume)  |
++-------------+                          +-----+                      +---------------------+
+                                                                               ^
+                                                                               | Provisioned by
+                                                                       +----------------+
+                                                                       | Cluster Admin  |
+                                                                       | or StorageClass|
+                                                                       +----------------+
+</div>
+                            <p>This separation of concerns is powerful. Developers (users) don't need to know the details of the underlying storage infrastructure. They just request storage with a PVC, and the cluster administrator is responsible for providing it via PVs.</p>
+
+                            <h3 id="storage-classes">Dynamic Provisioning with StorageClasses</h3>
+                            <p>Manually creating PVs is tedious. A <strong>StorageClass</strong> allows for the dynamic provisioning of PVs. When a user creates a PVC that requests a certain StorageClass, the cloud provider or storage plugin automatically creates a new PV to satisfy that claim.</p>
+                            <p>A StorageClass also defines a <strong>Reclaim Policy</strong>:</p>
+                            <ul>
+                                <li><strong><code>Delete</code>:</strong> (Default) When the PVC is deleted, the underlying PV and the actual storage volume (e.g., AWS EBS volume) are also deleted. Use this for scratch data or development.</li>
+                                <li><strong><code>Retain</code>:</strong> When the PVC is deleted, the PV is not deleted. It enters a "Released" state and the data on the underlying volume remains. The administrator must manually clean it up. Use this for critical production data.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="health-scaling">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">6. Health & Scaling: Staying Alive and Keeping Up</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Running an application is one thing; keeping it healthy and responsive under load is another. Kubernetes provides powerful tools for this.</p>
+
+                            <h3 id="probes">Liveness & Readiness Probes: The Health Check</h3>
+                            <p>Kubernetes needs to know if your application is healthy. It uses probes to ask your container, "Are you okay?"</p>
+                            
+                            <p>A <strong>Liveness Probe</strong> checks if your application is still running. If the liveness probe fails, Kubernetes assumes the container is deadlocked or frozen and will restart it. This helps recover from broken states.</p>
+                            
+                            <p>A <strong>Readiness Probe</strong> checks if your application is ready to serve traffic. If the readiness probe fails, Kubernetes will not restart the container, but it will remove the Pod's IP address from the Endpoints list of any matching Services. This means no new traffic will be sent to it until it becomes ready again. This is crucial for preventing errors during startup or when an application is temporarily busy.</p>
+
+                            <div class="note">
+                                <p><strong>Key Difference:</strong> A failing <strong>Liveness</strong> probe leads to a <strong>restart</strong>. A failing <strong>Readiness</strong> probe leads to <strong>traffic being stopped</strong>.</p>
+                            </div>
+                            
+                            <h4>YAML Examples</h4>
+                            <pre><code class="language-yaml">
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+spec:
+  containers:
+  - name: my-app-container
+    image: my-app:1.0
+    ports:
+    - containerPort: 8080
+    
+    # Liveness Probe: Restart if the app doesn't respond for 5 seconds.
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      failureThreshold: 3
+
+    # Readiness Probe: Don't send traffic until the app is ready.
+    readinessProbe:
+      httpGet:
+        path: /readyz
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+</code></pre>
+
+                            <h3 id="hpa">Horizontal Pod Autoscaler (HPA): Automatic Scaling</h3>
+                            <p>Manually scaling your application up and down is inefficient. The <strong>Horizontal Pod Autoscaler (HPA)</strong> automatically scales the number of Pods in a Deployment or StatefulSet based on observed CPU utilization (or other custom metrics).</p>
+                            
+                            <h4>The HPA Workflow</h4>
+                            <ol>
+                                <li>The HPA controller periodically queries the <strong>Metrics Server</strong> for resource metrics (like CPU) for the Pods it targets.</li>
+                                <li>It compares the current average metric value (e.g., 90% CPU) against the target value defined in the HPA object (e.g., 80% CPU).</li>
+                                <li>It calculates the desired number of replicas using a formula: <code>desiredReplicas = ceil[currentReplicas * ( currentMetricValue / desiredMetricValue )]</code>.</li>
+                                <li>It updates the <code>replicas</code> field on the target resource (e.g., the Deployment).</li>
+                                <li>The Deployment's controller sees the change and scales the underlying ReplicaSet up or down to match the new count.</li>
+                            </ol>
+                            
+                            <p>You can also configure HPAs to use custom metrics from a system like Prometheus, allowing you to scale based on business metrics like "requests per second" or "queue depth."</p>
+
+                            <h3 id="pdb">PodDisruptionBudget (PDB): Preventing Self-Inflicted Outages</h3>
+                            <p>Voluntary disruptions, like draining a node for maintenance or a cluster upgrade, can take down all replicas of your application at once. A <strong>PodDisruptionBudget (PDB)</strong> is a safety net you create for your application.</p>
+                            <p>A PDB specifies the minimum number of replicas (<code>minAvailable</code>) or the maximum number of unavailable replicas (<code>maxUnavailable</code>) that must be maintained for a given application. When an administrator tries to perform an action that would violate the PDB (like draining a node that hosts too many of the app's Pods), the operation is blocked until it's safe to proceed. This ensures high availability for your critical workloads during planned maintenance.</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="scheduling-resources">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">7. Scheduling & Resources: Where Do Pods Go?</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>In a multi-node cluster, a critical decision is *where* to run a new Pod. This is the job of the scheduler, and you have significant control over its decisions.</p>
+
+                            <h3 id="kube-scheduler">The Kube-Scheduler</h3>
+                            <p>The <code>kube-scheduler</code> is a core component of the Kubernetes control plane. Its sole responsibility is to watch for newly created Pods that have no Node assigned and select a Node for them to run on. The scheduling decision is a two-step process:</p>
+                            <ol>
+                                <li><strong>Filtering:</strong> The scheduler finds the set of Nodes where the Pod *could* run. It filters out any nodes that don't meet the Pod's requirements (e.g., not enough CPU/memory, doesn't have a required label, has a Taint the Pod doesn't tolerate).</li>
+                                <li><strong>Scoring:</strong> If there are multiple valid nodes, the scheduler ranks them based on a set of scoring rules (e.g., prefer nodes with fewer running Pods, prefer nodes that already have the container image downloaded). It picks the node with the highest score.</li>
+                            </ol>
+                            <p>You can customize its behavior by implementing custom scheduling plugins or even running multiple schedulers for different workloads.</p>
+
+                            <h3 id="selectors-affinity">Node Selectors & Affinity: Expressing Preferences</h3>
+                            <p>You can influence the scheduler's choice using several mechanisms.</p>
+                            <p>A <strong>Node Selector</strong> is the simplest way. You add a label to a Node (e.g., <code>disktype=ssd</code>) and specify that label in your Pod's spec using <code>nodeSelector</code>. The Pod will *only* be scheduled on nodes with that exact label.</p>
+                            
+                            <p><strong>Node Affinity</strong> is a more powerful and expressive evolution of node selectors. It allows for more complex rules:</p>
+                            <ul>
+                                <li><strong><code>requiredDuringSchedulingIgnoredDuringExecution</code>:</strong> A hard requirement. The Pod *must* be placed on a node that matches the rule. It works just like <code>nodeSelector</code> but with more expressive syntax (e.g., `In`, `NotIn`, `Exists`).</li>
+                                <li><strong><code>preferredDuringSchedulingIgnoredDuringExecution</code>:</strong> A soft requirement. The scheduler will *try* to place the Pod on a node that matches the rule but will schedule it elsewhere if it can't. You can assign a weight to each preference.</li>
+                            </ul>
+                            <p>There is also <strong>Pod Affinity/Anti-Affinity</strong>, which lets you schedule Pods based on the labels of other Pods already running on a node. For example: "Run this frontend Pod on the same node as a caching Pod" (affinity) or "Never run two replicas of my database on the same node" (anti-affinity).</p>
+
+                            <h3 id="taints-tolerations">Taints & Tolerations: The Repellent</h3>
+                            <p>Affinity is about a Pod being *attracted* to a set of nodes. Taints are the opposite: they allow a Node to *repel* a set of Pods.</p>
+                            <p>A <strong>Taint</strong> is placed on a Node. It marks the node so that no Pods can be scheduled on it unless they have a matching <strong>Toleration</strong>.</p>
+<div class="ascii-diagram">
++---------------------+      <--Taint: gpu=true:NoSchedule--
+|     GPU Node        |
++---------------------+
+
++-------------+
+| Normal Pod  | ---> Scheduling Fails (Does not tolerate the taint)
++-------------+
+
++-------------+
+|   GPU Pod   | ---> Scheduling Succeeds (Has the toleration)
+| Tolerates:  |
+| gpu=true    |
++-------------+
+</div>
+                            <p>This is perfect for dedicating nodes to specific workloads. For example, you can taint nodes with GPUs so that only Pods that require GPUs (and have the corresponding toleration) will be scheduled there.</p>
+                            
+                            <h3 id="resource-quotas">Resource Quotas: Enforcing Fairness</h3>
+                            <p>In a multi-tenant cluster where different teams share resources, one team could accidentally (or intentionally) consume all the CPU and memory, starving other teams. <strong>Resource Quotas</strong> prevent this.</p>
+                            <p>A Resource Quota is an object that provides constraints on a namespace. It can limit:</p>
+                            <ul>
+                                <li><strong>Compute Resources:</strong> The total amount of CPU and memory that can be requested or limited by all Pods in the namespace.</li>
+                                <li><strong>Storage Resources:</strong> The total number of PVCs or the total storage capacity they can request.</li>
+                                <li><strong>Object Counts:</strong> The number of objects of a certain type that can exist (e.g., max 10 Services, max 50 Pods).</li>
+                            </ul>
+                            
+                            <h4>Example: ResourceQuota YAML</h4>
+<pre><code class="language-yaml">
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: team-a-quota
+  namespace: team-a
+spec:
+  hard:
+    requests.cpu: "10"       # Total CPU requests cannot exceed 10 cores
+    requests.memory: 20Gi    # Total memory requests cannot exceed 20 GiB
+    limits.cpu: "20"         # Total CPU limits cannot exceed 20 cores
+    limits.memory: 40Gi      # Total memory limits cannot exceed 40 GiB
+    pods: "30"               # Max 30 pods in the namespace
+    services: "5"            # Max 5 services
+</code></pre>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="security">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">8. Security: Locking the Doors</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Kubernetes provides a powerful, layered security model. Understanding these layers is critical for running a secure cluster.</p>
+                            
+                            <h3 id="rbac">RBAC: Who Can Do What?</h3>
+                            <p><strong>Role-Based Access Control (RBAC)</strong> is the primary mechanism for authorizing access to the Kubernetes API. It revolves around four key objects:</p>
+                            <ul>
+                                <li><strong>Role:</strong> A set of permissions (verbs like <code>get</code>, <code>list</code>, <code>create</code>, <code>delete</code> on resources like <code>pods</code>, <code>services</code>) within a single <strong>namespace</strong>.</li>
+                                <li><strong>ClusterRole:</strong> The same as a Role, but cluster-scoped. It can grant permissions to cluster-wide resources (like <code>nodes</code>) or to namespaced resources across all namespaces.</li>
+                                <li><strong>RoleBinding:</strong> Grants the permissions in a Role to a set of users, groups, or ServiceAccounts within a specific <strong>namespace</strong>.</li>
+                                <li><strong>ClusterRoleBinding:</strong> Grants the permissions in a ClusterRole to users across the entire <strong>cluster</strong>.</li>
+                            </ul>
+                            
+                            <h4>Example: Granting Read-Only Access to Pods</h4>
+                            <p>Here's how to create a Role and RoleBinding to give a user named `jane.doe` read-only access to Pods in the `default` namespace.</p>
+
+                            <p><strong>1. Create the Role (`pod-reader-role.yaml`):</strong></p>
+<pre><code class="language-yaml">
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: pod-reader
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "watch", "list"]
+</code></pre>
+
+                            <p><strong>2. Create the RoleBinding (`pod-reader-binding.yaml`):</strong></p>
+<pre><code class="language-yaml">
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-pods
+  namespace: default
+subjects:
+- kind: User
+  name: jane.doe # Name is case-sensitive
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+</code></pre>
+                            <p>Apply these files with `kubectl apply -f`, and Jane will be able to run `kubectl get pods` but not `kubectl delete pod`.</p>
+                            
+                            <h3 id="securing-secrets">Securing Secrets</h3>
+                            <p>As mentioned, Secrets are only base64 encoded by default. To truly secure them, you must enable <strong>encryption at rest</strong>. This involves configuring the Kubernetes API server to encrypt Secret objects before writing them to the etcd database. This is a critical production security step.</p>
+                            <p>This is configured in an <code>EncryptionConfiguration</code> object, which the API server is pointed to at startup. It allows you to use different providers, like a local key (<code>aescbc</code>), a Key Management Service (KMS) from a cloud provider, or other external key services. Using a KMS is the recommended best practice, as it manages key rotation and access policies for you.</p>
+
+                            <h3 id="host-security"><code>hostNetwork</code> & <code>hostPort</code>: Use with Caution</h3>
+                            <p>Two fields in a Pod spec can introduce significant security risks:</p>
+                            <ul>
+                                <li><strong><code>hostNetwork: true</code>:</strong> This setting bypasses the Pod's network sandbox and makes the Pod share the host node's network namespace. The Pod can see all of the node's network interfaces and listen on any of its ports. This gives the Pod elevated network privileges and breaks network isolation.</li>
+                                <li><strong><code>hostPort: <port></code>:</strong> This directly exposes a port from the container on the host node's IP address. This can lead to port conflicts on the node and bypasses the controlled access provided by Services and Network Policies.</li>
+                            </ul>
+                            <p>Both should be avoided unless absolutely necessary (e.g., for some CNI plugins or monitoring agents that need direct access to the host's network). Use a <code>NodePort</code> Service instead of `hostPort` for most external access needs.</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="operations">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">9. Operations & Troubleshooting: Keeping the Music Playing</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Even the best conductors face challenges. Knowing how to operate and troubleshoot your cluster is essential.</p>
+                            
+                            <h3 id="updates-rollbacks">Rolling Updates & Rollbacks</h3>
+                            <p>When you update the Pod template in a Deployment (e.g., change the container image), it triggers a <strong>rolling update</strong>.</p>
+                            
+                            <h4>The Rolling Update Strategy</h4>
+                            <ol>
+                                <li>The Deployment creates a new ReplicaSet with the updated Pod template.</li>
+                                <li>It scales up the new ReplicaSet by one and scales down the old ReplicaSet by one, while respecting the <code>maxUnavailable</code> and <code>maxSurge</code> parameters.</li>
+                                <li>It waits for the new Pod to become "ready" (passing its readiness probe).</li>
+                                <li>It repeats this process until all old Pods are replaced by new ones.</li>
+                                <li>The old ReplicaSet is kept (with 0 replicas) in case you need to roll back.</li>
+                            </ol>
+                            
+                            <h4>How to Roll Back</h4>
+                            <p>If you discover a bug in your new version, you can roll back instantly.</p>
+                            <p>1. <strong>Check deployment history:</strong></p>
+                            <pre><code class="language-bash">kubectl rollout history deployment/my-app</code></pre>
+                            <p>2. <strong>Roll back to the previous version:</strong></p>
+                            <pre><code class="language-bash">kubectl rollout undo deployment/my-app</code></pre>
+                            <p>This command simply tells the Deployment to scale the old ReplicaSet back up and the new one back down. It's fast and safe.</p>
+
+                            <h3 id="canary-deployments">Performing a Canary Deployment</h3>
+                            <p>A canary deployment is a strategy where you release a new version to a small subset of users before rolling it out to everyone. This minimizes the impact of a potential bug. You can do this in Kubernetes by manipulating Deployments and Services.</p>
+                            <h4>The Approach:</h4>
+                            <ol>
+                                <li><strong>Stable Deployment:</strong> You have a stable Deployment running, let's call it <code>webapp-v1</code>, with 10 replicas. A Service selects these Pods using a label like <code>app: webapp</code>.</li>
+                                <li><strong>Canary Deployment:</strong> You create a *new* Deployment, <code>webapp-v2</code>, with your new image. You give it the same <code>app: webapp</code> label but add a new one: <code>version: v2</code>. Set its replica count to 1.</li>
+                                <li><strong>Traffic Shift:</strong> Now, your Service (which selects on <code>app: webapp</code>) will send approximately 1/11th (~9%) of the traffic to your new canary Pod and the rest to the stable v1 Pods.</li>
+                                <li><strong>Monitor:</strong> You carefully monitor the canary for errors or performance issues.</li>
+                                <li><strong>Promote or Rollback:</strong>
+                                    <ul>
+                                        <li><strong>If successful:</strong> You gradually scale up the <code>webapp-v2</code> Deployment to 10 and scale down the <code>webapp-v1</code> Deployment to 0. The canary has been promoted.</li>
+                                        <li><strong>If it fails:</strong> You scale the <code>webapp-v2</code> Deployment down to 0. The canary is removed, and 100% of traffic returns to the stable version.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            <p>Service mesh tools like Istio or Linkerd can automate this process with much more sophisticated traffic splitting (e.g., "send 5% of traffic to v2").</p>
+                            
+                            <h3 id="monitoring">Monitoring with <code>kubectl top</code></h3>
+                            <p>The simplest way to check real-time resource usage is with the <code>kubectl top</code> command. This requires the <strong>Metrics Server</strong> to be installed in your cluster.</p>
+                            
+                            <p><strong>Check node resource usage:</strong></p>
+<pre><code class="language-bash">
+$ kubectl top node
+NAME              CPU(cores)   CPU%   MEMORY(bytes)   MEMORY%
+worker-node-1     250m         12%    2412Mi          60%
+worker-node-2     180m         9%     1850Mi          46%
+</code></pre>
+
+                            <p><strong>Check Pod resource usage in a namespace:</strong></p>
+<pre><code class="language-bash">
+$ kubectl top pod -n kube-system
+NAME                                   CPU(cores)   MEMORY(bytes)
+coredns-6955765f44-abcde             4m           12Mi
+etcd-master-node                       25m          75Mi
+kube-apiserver-master-node             150m         350Mi
+...
+</code></pre>
+                            
+                            <h3 id="troubleshoot-pending">Troubleshooting a Pod Stuck in "Pending" State</h3>
+                            <p>If a Pod is stuck in `Pending`, it means the scheduler cannot find a node to run it on. The key is to find out *why*.
+                            
+                            <ol>
+                                <li><strong>Describe the Pod:</strong> This is always the first step. Look at the "Events" section at the bottom.
+                                <pre><code class="language-bash">kubectl describe pod <pod-name> -n <namespace></code></pre>
+                                <p>The event message will usually tell you the exact reason:</p>
+                                <ul>
+                                    <li>`0/3 nodes are available: 3 Insufficient cpu.` (You don't have enough resources).</li>
+                                    <li>`0/3 nodes are available: 3 node(s) didn't match node selector.` (Your `nodeSelector` or `nodeAffinity` rules are too restrictive).</li>
+                                    <li>`0/3 nodes are available: 1 node(s) had taints that the pod didn't tolerate.` (You need to add a toleration to your Pod).</li>
+                                    <li>`pod has unbound immediate PersistentVolumeClaims` (The PVC it's requesting can't be fulfilled).</li>
+                                </ul>
+                                </li>
+                                <li><strong>Check Cluster Resources:</strong> If the issue is resources, check your node status and allocation.
+                                <pre><code class="language-bash">kubectl describe nodes</code></pre>
+                                </li>
+                            </ol>
+                            
+                            <h3 id="troubleshoot-crashloop">Troubleshooting a Pod in "CrashLoopBackOff"</h3>
+                            <p>A `CrashLoopBackOff` status means the container starts, crashes, and then Kubernetes waits with an increasing back-off time before trying to restart it again. This is an application-level problem.</p>
+                            <ol>
+                                <li><strong>Check the Logs:</strong> The logs of the crashing container are the most important clue.
+                                <pre><code class="language-bash">kubectl logs <pod-name> -n <namespace></code></pre>
+                                <p>If the container crashes too quickly, you might not see any logs. In that case, check the logs of the *previous* failed container instance:</p>
+                                <pre><code class="language-bash">kubectl logs <pod-name> -n <namespace> --previous</code></pre>
+                                </li>
+                                <li><strong>Describe the Pod:</strong> Check the "Events" section for clues like `Back-off restarting failed container`. Also check the `Exit Code` in the container status. An `Exit Code 1` usually indicates a generic error, while `Exit Code 137` means it was killed due to an Out Of Memory (OOM) event.
+                                <pre><code class="language-bash">kubectl describe pod <pod-name> -n <namespace></code></pre>
+                                </li>
+                                <li><strong>Check Configuration:</strong> Is a required ConfigMap or Secret missing? Is a file path wrong? Is a database connection failing?</li>
+                                <li><strong>Exec into a Debug Pod:</strong> If the image has a shell, you can try to `exec` into it for debugging, but this is often difficult if it's crash-looping. A better approach might be to change the Pod's `command` to something that keeps it alive (like `["sleep", "3600"]`) so you can `exec` in and poke around.</li>
+                            </ol>
+
+                            <h3 id="init-containers">Init Containers: The Setup Crew</h3>
+                            <p>An <strong>Init Container</strong> is a special container that runs to completion *before* the main application containers are started. You can have a series of Init Containers, and each one must complete successfully before the next one begins.</p>
+                            <p><strong>Scenario where it's necessary:</strong> Your application needs to wait for a backend service (like a database) to be available before it starts. If it starts too early, it will crash.</p>
+                            <p>You can create an Init Container that runs a simple loop, trying to connect to the database service. Once it succeeds, the Init Container exits, and Kubernetes proceeds to start your main application container, which can now safely assume the database is ready.</p>
+<pre><code class="language-yaml">
+# ...
+spec:
+  # This container runs first and must succeed
+  initContainers:
+  - name: wait-for-db
+    image: busybox:1.28
+    command: ['sh', '-c', 'until nslookup my-db-service; do echo waiting for db; sleep 2; done;']
+  
+  # This container only starts after the initContainer is done
+  containers:
+  - name: my-app
+    image: my-app:1.0
+# ...
+</code></pre>
+
+                            <h3 id="etcd-backup">etcd Backup & Restore</h3>
+                            <p><code>etcd</code> is the brain of your Kubernetes cluster; it stores the entire state. Losing it means losing your cluster. Backing it up is non-negotiable.</p>
+                            <h4>The Approach:</h4>
+                            <ol>
+                                <li><strong>Use `etcdctl` snapshot:</strong> The standard tool for interacting with etcd is `etcdctl`. It has a built-in `snapshot save` command.</li>
+                                <li><strong>Find `etcdctl` and certificates:</strong> On most self-managed clusters, `etcd` runs as a static Pod on the master nodes. You'll need to `exec` into that Pod or use the host's `etcdctl` binary, providing the necessary TLS certificates (ca.crt, server.crt, server.key) to authenticate to the etcd server.
+                                <pre><code class="language-bash">
+# This command needs to be run on a master node
+ETCDCTL_API=3 etcdctl snapshot save /path/to/backup.db \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key
+                                </code></pre>
+                                </li>
+                                <li><strong>Automate and Store Off-site:</strong> This command should be run regularly (e.g., via a CronJob) and the resulting snapshot file must be copied to a secure, off-site location (like an S3 bucket).</li>
+                                <li><strong>Restore:</strong> Restoring is a more involved, offline process that requires stopping the API server and etcd, running `etcdctl snapshot restore`, and then restarting the control plane components. This is a disaster recovery procedure.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="hard-questions">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">10. Advanced Design & Strategy (The "Hard" Questions)</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>Here we tackle more complex, design-oriented questions that test your deeper understanding of how to apply Kubernetes concepts to solve real-world problems.</p>
+                            
+                            <h3 id="hq-stateful-db">Design a StatefulSet for a distributed database.</h3>
+                            <p><strong>Approach:</strong></p>
+                            <ol>
+                                <li><strong>Workload Type:</strong> Use a `StatefulSet`. This is non-negotiable for a distributed database due to its requirements for stable identity and storage.</li>
+                                <li><strong>Network Identity:</strong> The StatefulSet provides stable hostnames (e.g., `db-0`, `db-1`, `db-2`). To enable easy discovery between the nodes of the database cluster, create a companion <strong>Headless Service</strong> (<code>clusterIP: None</code>). This allows each Pod to find the IPs of its peers by doing a DNS lookup for `db-0.my-db-service`, `db-1.my-db-service`, etc.</li>
+                                <li><strong>Persistent Storage:</strong> Use a `volumeClaimTemplates` section in the StatefulSet spec. This will dynamically create a unique PersistentVolumeClaim (and thus a unique PersistentVolume) for each Pod in the set (e.g., `data-db-0`, `data-db-1`). This ensures that if `db-1` is rescheduled to a new node, it re-attaches to its original storage volume, preserving its data.</li>
+                                <li><strong>Graceful Handling:</strong> The ordered startup (0 then 1 then 2) and shutdown (2 then 1 then 0) provided by the StatefulSet is critical for database clusters to maintain quorum and leadership election safely.</li>
+                                <li><strong>High Availability:</strong> Use Pod Anti-Affinity rules to ensure that no two database Pods are scheduled on the same physical node, preventing a single node failure from taking down multiple database replicas.</li>
+                            </ol>
+
+                            <h3 id="hq-secure-cluster">Secure a Kubernetes cluster using RBAC and Network Policies.</h3>
+                            <p><strong>Approach:</strong></p>
+                            <ol>
+                                <li><strong>Principle of Least Privilege (RBAC):</strong>
+                                    <ul>
+                                        <li>Avoid giving `cluster-admin` rights to users or service accounts. Create specific `Roles` and `ClusterRoles` with the minimum required permissions.</li>
+                                        <li>For applications, create a unique `ServiceAccount` for each one. Don't use the `default` ServiceAccount. Bind this ServiceAccount to a Role that only grants it the API access it needs (e.g., the ability to `list` Endpoints if it's doing service discovery).</li>
+                                        <li>Audit `ClusterRoleBindings` regularly, as they grant cluster-wide permissions.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Network Isolation (Network Policies):</strong>
+                                    <ul>
+                                        <li><strong>Default Deny:</strong> Apply a "default deny" Network Policy to each namespace. This policy selects all pods but specifies no ingress or egress rules, effectively blocking all traffic.
+                                        <pre><code class="language-yaml">
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+                                        </code></pre>
+                                        </li>
+                                        <li><strong>Explicit Allow Rules:</strong> Create additional, more specific Network Policies to whitelist required traffic flows. For example, create a policy that allows ingress to "backend" Pods from "frontend" Pods.
+                                        <pre><code class="language-yaml">
+# ... Ingress Rule ...
+ingress:
+- from:
+  - podSelector:
+      matchLabels:
+        app: frontend
+  ports:
+  - protocol: TCP
+    port: 8080
+                                        </code></pre>
+                                        </li>
+                                        <li><strong>Isolate Namespaces:</strong> This combination of a default-deny policy and explicit-allow policies effectively isolates namespaces from each other at the network level, a cornerstone of multi-tenant security.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+
+                            <h3 id="hq-network-latency">Troubleshoot intermittent network latency between Pods across nodes.</h3>
+                            <p><strong>Approach:</strong></p>
+                            <ol>
+                                <li><strong>Isolate the Problem:</strong> Does it happen between Pods on the *same* node? Or only across nodes? If it's only across nodes, the problem is likely in the CNI plugin, the underlying network fabric, or `kube-proxy`.</li>
+                                <li><strong>Baseline Performance:</strong> Deploy a debugging tool like `netperf` or `iperf3` as a DaemonSet to establish a baseline for network throughput and latency between all nodes in the cluster.</li>
+                                <li><strong>In-Pod Diagnostics:</strong> Use a debug container (e.g., `netshoot`) to run tools like `ping`, `traceroute`, and `mtr` from within the affected source Pod to the destination Pod's IP address. This can help identify packet loss or high-latency hops.</li>
+                                <li><strong>Check CNI Logs:</strong> Check the logs of your CNI plugin's agent (e.g., Calico, Cilium, Flannel) on the source and destination nodes. Look for errors related to routing, IP address management (IPAM), or policy enforcement.</li>
+                                <li><strong>Check `kube-proxy` Logs:</strong> If latency occurs when communicating via a Service, check the `kube-proxy` logs on the nodes for errors. If you're using `iptables` mode, a very large number of Services can lead to performance degradation.</li>
+                                <li><strong>Advanced Tracing (Service Mesh):</strong> If you have a service mesh like Istio or Linkerd installed, use its distributed tracing and telemetry dashboards. They can pinpoint exactly which service-to-service call is slow and provide detailed latency breakdowns.</li>
+                            </ol>
+                            
+                            <h3 id="hq-custom-dns">Customize CoreDNS to forward specific DNS queries to an external resolver.</h3>
+                            <p><strong>Approach:</strong></p>
+                            <ol>
+                                <li><strong>Locate the ConfigMap:</strong> CoreDNS configuration is managed by a ConfigMap, usually named `coredns` in the `kube-system` namespace.</li>
+                                <li><strong>Edit the Corefile:</strong> Use `kubectl edit configmap coredns -n kube-system` to modify the `Corefile` data key.</li>
+                                <li><strong>Add a Forwarding Block:</strong> Inside the main server block, add a new block for the specific domain you want to forward. The `forward` plugin is used for this.
+                                <pre><code class="language-text">
+# ... existing Corefile content ...
+. {
+    # ... other plugins like errors, health, etc. ...
+    
+    # Add this block for your custom domain
+    my-internal-corp.com:53 {
+        errors
+        cache 30
+        # Forward requests for *.my-internal-corp.com to your internal DNS servers
+        forward . 10.100.1.10 10.100.1.11
+    }
+
+    # The default kubernetes block must remain
+    kubernetes cluster.local in-addr.arpa ip6.arpa {
+       pods insecure
+       fallthrough in-addr.arpa ip6.arpa
+       ttl 30
+    }
+    # ... other plugins like prometheus, forward to upstream, etc. ...
+}
+                                </code></pre>
+                                </li>
+                                <li><strong>Apply and Restart:</strong> After saving the ConfigMap, the changes won't apply automatically. You need to restart the CoreDNS pods to make them pick up the new configuration. You can do this with `kubectl rollout restart deployment/coredns -n kube-system`.</li>
+                            </ol>
+                            
+                            <h3 id="hq-overcommitted">Optimize resource allocation in a cluster with overcommitted nodes.</h3>
+                            <p><strong>Approach:</strong></p>
+                            <ol>
+                                <li><strong>Identify the Problem:</strong> "Overcommitted" means the sum of resource *limits* on a node is much higher than the node's actual capacity. The problem arises when workloads burst and try to use those limits, causing CPU throttling or OOM kills. First, identify which nodes are most overcommitted using `kubectl describe node` and summing the limits of all pods scheduled there.</li>
+                                <li><strong>Right-Sizing Requests and Limits:</strong> The most important step. Many developers set arbitrary or no limits. Use monitoring tools (Prometheus is ideal) to analyze the historical resource usage of applications. Adjust the `requests` to match the typical usage and the `limits` to a reasonable ceiling that prevents run-away processes but allows for bursting. The goal is to make `requests` and `limits` reflect reality.</li>
+                                <li><strong>Implement Quality of Service (QoS):</strong> Kubernetes uses QoS classes based on your requests/limits:
+                                    <ul>
+                                        <li><strong>Guaranteed:</strong> `requests` == `limits`. These are the last Pods to be killed during resource pressure. Use this for critical workloads like databases.</li>
+                                        <li><strong>Burstable:</strong> `requests` < `limits`. These are killed after BestEffort Pods. Most standard workloads fall here.</li>
+                                        <li><strong>BestEffort:</strong> No `requests` or `limits` set. These are the first to be killed. Use for low-priority batch jobs.</li>
+                                    By setting requests/limits properly, you automatically assign QoS and tell Kubernetes which Pods are most important to keep alive.</li>
+                                <li><strong>Vertical Pod Autoscaler (VPA):</strong> For a more automated approach, deploy the VPA. It can analyze workload usage over time and automatically adjust the `requests` and `limits` in a Deployment to match, helping to eliminate manual right-sizing.</li>
+                            </ol>
+                            
+                            <h3 id="hq-service-mesh">Implement a service mesh (e.g., Istio). What benefits does it provide?</h3>
+                            <p><strong>Approach:</strong></p>
+                            <ol>
+                                <li><strong>Implementation Strategy:</strong> A service mesh like Istio works by injecting a "sidecar" proxy (Envoy) into every application Pod.
+                                    <ul>
+                                        <li>First, install the Istio control plane (Istiod) into the cluster.</li>
+                                        <li>Then, enable automatic sidecar injection for the namespaces where you want to use the mesh by adding a label (e.g., `istio-injection=enabled`).</li>
+                                        <li>When you deploy or restart Pods in that namespace, the Istio webhook will automatically add the Envoy sidecar container to your Pod's spec. All inbound and outbound traffic from your application container now flows through this proxy.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Key Benefits over Native Services:</strong>
+                                    <ul>
+                                        <li><strong>Security (mTLS):</strong> Istio can automatically encrypt all traffic between services with mutual TLS (mTLS), providing strong service-to-service authentication and encryption without any code changes in your application. This is a massive security upgrade over unencrypted in-cluster traffic.</li>
+                                        <li><strong>Advanced Traffic Management:</strong> While Kubernetes Services provide basic load balancing, Istio allows fine-grained traffic control: percentage-based traffic splitting (for canaries), request-based routing (e.g., based on HTTP headers), fault injection (for chaos engineering), and circuit breaking.</li>
+                                        <li><strong>Observability:</strong> Because all traffic flows through the Envoy proxies, Istio provides rich, consistent telemetry (metrics, logs, distributed traces) for all services out of the box. You get detailed dashboards (e.g., in Kiali) showing service dependencies, traffic flow, and latency without instrumenting your code.</li>
+                                    </ul>
+                                </li>
+                            </ol>
+
+                            <h3 id="hq-node-failure">Handle a node failure gracefully.</h3>
+                            <p><strong>Approach:</strong></p>
+                            <ol>
+                                <li><strong>Kubernetes's Default Behavior:</strong> When a node fails (e.g., becomes `NotReady`), the `kube-controller-manager` on the master node waits for a grace period (default 5 minutes, configured by `pod-eviction-timeout`). After this timeout, it considers the Pods on the dead node to be terminated and the controllers (like Deployments) will create replacement Pods on healthy nodes.</li>
+                                <li><strong>Ensure High Availability (User's Responsibility):</strong>
+                                    <ul>
+                                        <li><strong>Run Multiple Replicas:</strong> Never run a critical application with a single replica. Run at least 2-3 replicas for any Deployment.</li>
+                                        <li><strong>Use Pod Anti-Affinity:</strong> For critical workloads, use a *required* Pod anti-affinity rule to ensure that the replicas are spread across different nodes (and ideally different availability zones in a cloud environment). This guarantees that a single node failure cannot take down all of your replicas.</li>
+                                        <li><strong>Configure PodDisruptionBudgets (PDBs):</strong> While PDBs are for *voluntary* disruptions, they are part of a holistic availability strategy. They protect against self-inflicted outages during maintenance.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>For Stateful Workloads:</strong> If a StatefulSet Pod was on the failed node, it will be rescheduled to a new node and will re-attach to its original PV, preserving its state. The 5-minute eviction timeout is important here, as it prevents a "split-brain" scenario if the node is just temporarily disconnected from the network.</li>
+                            </ol>
+
+                            <h3 id="hq-multi-cluster">Design a multi-cluster architecture for disaster recovery (DR).</h3>
+                             <p><strong>Approach:</strong></p>
+                             <ol>
+                                 <li><strong>Architecture Choice: Active-Passive vs. Active-Active.</strong>
+                                     <ul>
+                                         <li><strong>Active-Passive:</strong> One primary cluster (e.g., in `us-east-1`) serves all live traffic. A second, "hot standby" cluster (e.g., in `us-west-1`) is kept in sync but receives no traffic. In a disaster, DNS is switched to fail over to the passive cluster. This is simpler to manage.</li>
+                                         <li><strong>Active-Active:</strong> Both clusters serve live traffic simultaneously, often using geo-aware DNS to route users to the nearest cluster. This provides better latency and utilization but is much more complex to manage, especially regarding data replication.</li>
+                                     </ul>
+                                 </li>
+                                 <li><strong>Tooling for Federation:</strong> Managing applications across multiple clusters manually is error-prone. Tools are needed to synchronize resources.
+                                     <ul>
+                                         <li><strong>Karmada / KubeFed:</strong> These are Kubernetes-native federation tools. You define a "federated" application manifest, and the tool's control plane pushes the corresponding Kubernetes objects (Deployments, Services, etc.) to the member clusters. They can manage replica scheduling policies (e.g., "deploy 5 replicas in cluster A and 3 in cluster B").</li>
+                                         <li><strong>GitOps (ArgoCD / Flux):</strong> This is a very popular approach. You have a single Git repository as the source of truth for your application manifests. A GitOps controller (like ArgoCD) runs in each cluster, watches the repository, and automatically syncs the cluster's state to match the manifests in Git. This ensures both clusters are configured identically.</li>
+                                     </ul>
+                                 </li>
+                                 <li><strong>Critical Components for DR:</strong>
+                                     <ul>
+                                         <li><strong>Traffic Management:</strong> A global DNS load balancer (like AWS Route 53 or Cloudflare) is essential for routing traffic and handling the failover between clusters.</li>
+                                         <li><strong>Data Replication:</strong> This is the hardest part. For stateful applications, you need a database solution that supports cross-region replication (e.g., managed cloud databases like Amazon Aurora Global Database, or self-hosted solutions configured for replication).</li>
+                                         <li><strong>Image Registry:</strong> Your container image registry must be available to both clusters. Either use a globally replicated registry or have a local mirror in each region.</li>
+                                     </ul>
+                                 </li>
+                             </ol>
+                        </div>
+                    </div>
+                </section>
+                
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButton = document.getElementById('dark-mode-toggle');
+            const body = document.body;
+
+            // Function to set mode
+            const setMode = (mode) => {
+                if (mode === 'dark') {
+                    body.classList.add('dark-mode');
+                    toggleButton.querySelector('i').textContent = 'brightness_7'; // Sun icon
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    body.classList.remove('dark-mode');
+                    toggleButton.querySelector('i').textContent = 'brightness_4'; // Moon icon
+                    localStorage.setItem('theme', 'light');
+                }
+            };
+
+            // Toggle mode on button click
+            toggleButton.addEventListener('click', () => {
+                if (body.classList.contains('dark-mode')) {
+                    setMode('light');
+                } else {
+                    setMode('dark');
+                }
+            });
+
+            // Set initial mode from localStorage or system preference
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme) {
+                setMode(savedTheme);
+            } else if (prefersDark) {
+                setMode('dark');
+            }
+
+            // Active link highlighting in navigation
+            const navLinks = document.querySelectorAll('.mdl-layout__drawer .mdl-navigation__link');
+            const sections = document.querySelectorAll('section[id]');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active-link');
+                            if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                link.classList.add('active-link');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" }); // Activate when section is in the middle of the viewport
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

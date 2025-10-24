@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Beginner's Guide to Socket Programming in C</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Fira+Code:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .mdl-layout__header {
+            background-color: #3f51b5; /* Indigo */
+            color: white;
+        }
+
+        .mdl-layout__header .mdl-layout-title {
+            font-size: 1.8em;
+        }
+
+        .mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
+            font-size: 1.1em;
+            color: #424242;
+            padding: 12px 16px;
+        }
+         .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+            background-color: #e8eaf6; /* Light indigo */
+        }
+
+        .page-content {
+            padding: 20px;
+            max-width: 900px;
+            margin: 20px auto;
+        }
+
+        .mdl-card {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+        }
+
+        section[id], h2[id], h3[id] {
+             scroll-margin-top: 80px;
+        }
+
+        .mdl-card__supporting-text {
+            color: #333;
+            font-size: 1.1em;
+            padding-bottom: 24px;
+        }
+        .mdl-card__title-text {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        h2, h3, h4 {
+            color: #303f9f; /* Darker Indigo */
+        }
+
+        pre, code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+        }
+
+        pre {
+            background-color: #272822; /* Monokai-like */
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        :not(pre) > code {
+            background-color: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #c51162; /* Pink accent */
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+            color: inherit;
+            font-size: inherit;
+        }
+
+        .toc {
+            background-color: rgba(232, 234, 246, 0.85);
+            border-left: 5px solid #3f51b5;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .toc ul li a {
+            text-decoration: none;
+            color: #303f9f;
+            display: block;
+            padding: 5px 0;
+            transition: color 0.2s;
+        }
+        .toc ul li a:hover {
+            color: #1a237e;
+            font-weight: bold;
+        }
+        .toc ul ul {
+            padding-left: 20px;
+        }
+        .toc ul ul li a {
+            font-size: 0.9em;
+        }
+
+
+        .note {
+            background-color: rgba(255, 249, 196, 0.85);
+            border-left: 5px solid #ffc107; /* Amber */
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .note p { margin: 0; }
+
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .dark-mode .mdl-layout__header {
+            background-color: #1f1f1f;
+        }
+        .dark-mode .mdl-card {
+            background-color: rgba(40, 40, 40, 0.9);
+            color: #e0e0e0;
+        }
+        .dark-mode .mdl-card__supporting-text {
+            color: #e0e0e0;
+        }
+        .dark-mode h2, .dark-mode h3, .dark-mode h4 {
+            color: #bb86fc;
+        }
+        .dark-mode .toc {
+            background-color: rgba(30, 30, 30, 0.85);
+            border-left-color: #bb86fc;
+        }
+        .dark-mode .toc ul li a {
+            color: #bb86fc;
+        }
+        .dark-mode .toc ul li a:hover {
+            color: #cfc2ff;
+        }
+        .dark-mode .note {
+            background-color: rgba(50, 50, 30, 0.85);
+            border-left-color: #fdd835;
+            color: #e0e0e0;
+        }
+        .dark-mode :not(pre) > code {
+            background-color: #333;
+            color: #f06292;
+        }
+        .dark-mode .mdl-layout__drawer {
+            background-color: #1e1e1e;
+        }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link {
+            color: #bb86fc;
+        }
+        .dark-mode .mdl-layout__drawer .mdl-navigation .mdl-navigation__link:hover {
+            background-color: #333;
+        }
+
+        .dark-mode-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- MDL Layout -->
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+        <header class="mdl-layout__header">
+            <div class="mdl-layout__header-row">
+                <span class="mdl-layout-title">Socket Programming in C</span>
+            </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <span class="mdl-layout-title">Navigation</span>
+            <nav class="mdl-navigation">
+                <a class="mdl-navigation__link" href="#intro">Introduction</a>
+                <a class="mdl-navigation__link" href="#what-is-a-socket">What is a Socket?</a>
+                <a class="mdl-navigation__link" href="#how-it-works">How It Works: The Lifecycle</a>
+                <a class="mdl-navigation__link" href="#steps-server">Server Steps</a>
+                <a class="mdl-navigation__link" href="#steps-client">Client Steps</a>
+                <a class="mdl-navigation__link" href="#code-implementation">Code Implementation</a>
+                <a class="mdl-navigation__link" href="#conclusion">Conclusion</a>
+            </nav>
+        </div>
+        <main class="mdl-layout__content">
+            <div class="page-content">
+
+                <!-- Dark Mode Toggle Button -->
+                <button id="dark-mode-toggle" class="dark-mode-toggle mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored">
+                    <i class="material-icons">brightness_4</i>
+                </button>
+
+                <!-- Introduction Section -->
+                <section id="intro">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">Introduction: The Language of Networks</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>
+                                Ever wondered how your web browser talks to a web server, or how a chat application sends messages across the globe? The magic behind this communication is often powered by <strong>sockets</strong>. Socket programming is the foundation of network communication, allowing programs on different computers to exchange data.
+                            </p>
+                            <p>
+                                In this guide, we'll demystify socket programming in C. We'll explore what sockets are, how they work, and build a simple client-server application from scratch. By the end, you'll have a solid understanding of one of the most fundamental concepts in computer science.
+                            </p>
+                            <div class="toc">
+                                <h4>On This Page</h4>
+                                <ul>
+                                    <li><a href="#what-is-a-socket">1. What is a Socket? An Analogy</a></li>
+                                    <li><a href="#how-it-works">2. How it Works: The Client-Server Lifecycle</a>
+                                        <ul>
+                                            <li><a href="#steps-server">2.1 Server-Side Workflow</a></li>
+                                            <li><a href="#steps-client">2.2 Client-Side Workflow</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#code-implementation">3. Code Implementation: A Simple Echo Server</a>
+                                         <ul>
+                                            <li><a href="#code-server">3.1 The Server Code</a></li>
+                                            <li><a href="#code-client">3.2 The Client Code</a></li>
+                                            <li><a href="#code-run">3.3 Compiling and Running</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#important-structs">4. A Note on Data Structures</a></li>
+                                    <li><a href="#conclusion">5. Conclusion & Next Steps</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- What is a Socket Section -->
+                <section id="what-is-a-socket">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text" id="what-is-a-socket">1. What is a Socket? An Analogy</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>
+                                Think of a socket like a telephone in your house.
+                            </p>
+                            <ul>
+                                <li>Your house has a unique address (<strong>IP Address</strong>).</li>
+                                <li>Inside your house, you might have multiple phones, each with a different extension number (<strong>Port Number</strong>).</li>
+                                <li>The physical telephone itself is the <strong>Socket</strong>.</li>
+                            </ul>
+                            <p>
+                                To talk to someone, you need their address (IP) and their extension (port). You pick up your phone (create a socket), dial their number (connect), and start talking (send/receive data).
+                            </p>
+                            <p>
+                                In technical terms, a <strong>socket</strong> is one endpoint of a two-way communication link between two programs running on the network. A socket is bound to a port number so that the TCP layer can identify the application that data is destined to be sent to.
+                            </p>
+                            <p>We'll be focusing on <strong>TCP Sockets</strong> (Stream Sockets), which provide a reliable, connection-oriented communication channel—like a phone call.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- How it Works Section -->
+                <section id="how-it-works">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">2. How it Works: The Client-Server Lifecycle</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>
+                                Most network applications follow the <strong>client-server model</strong>.
+                            </p>
+                            <ul>
+                                <li>A <strong>Server</strong> is a program that waits patiently for incoming connections from clients. Think of a call center operator waiting for a call.</li>
+                                <li>A <strong>Client</strong> is a program that initiates a connection to a server. Think of someone dialing the call center's number.</li>
+                            </ul>
+                            <p>Let's break down the sequence of function calls (the API) for both the server and the client.</p>
+
+                            <h3 id="steps-server">2.1 Server-Side Workflow</h3>
+                            <p>The server needs to set up a "reception desk" to handle incoming client requests.</p>
+                            <ol>
+                                <li><strong><code>socket()</code></strong>: Create a new socket. This is like installing a new phone line in your building. You get a file descriptor (a number) that represents the socket.</li>
+                                <li><strong><code>bind()</code></strong>: Assign an address (IP address and port number) to the socket. This is like giving your new phone line a specific public number so people can call you.</li>
+                                <li><strong><code>listen()</code></strong>: Mark the socket as a passive socket that will be used to accept incoming connection requests. You're now officially "open for business" and can listen for the phone to ring.</li>
+                                <li><strong><code>accept()</code></strong>: Wait for a client to connect. When a client calls, you "pick up the phone." This call blocks until a client connects, and it returns a <em>new</em> socket file descriptor for this specific connection. The original socket remains listening for more clients.</li>
+                                <li><strong><code>read()</code> / <code>write()</code></strong>: Use the new socket descriptor from <code>accept()</code> to communicate with the connected client (e.g., receive a request and send a response).</li>
+                                <li><strong><code>close()</code></strong>: When the conversation is over, close the connection socket. The server often goes back to <code>accept()</code> to wait for the next client.</li>
+                            </ol>
+
+                            <h3 id="steps-client">2.2 Client-Side Workflow</h3>
+                            <p>The client's job is much simpler: it just needs to connect and communicate.</p>
+                            <ol>
+                                <li><strong><code>socket()</code></strong>: Create a new socket, just like the server does. You get your own phone to make a call.</li>
+                                <li><strong><code>connect()</code></strong>: Connect to the server's address and port. You dial the server's public number. The operating system handles finding the server on the network.</li>
+                                <li><strong><code>write()</code> / <code>read()</code></strong>: Once connected, send and receive data with the server.</li>
+                                <li><strong><code>close()</code></strong>: Hang up the phone by closing the socket.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Code Implementation Section -->
+                <section id="code-implementation">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">3. Code Implementation: A Simple Echo Server</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>
+                                Theory is great, but let's see it in action! We'll create an "echo" server. The client will send a message, and the server will send the exact same message back.
+                            </p>
+                            <p>You'll need these headers for both programs:</p>
+<pre><code class="language-c">#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h></code></pre>
+
+                            <h3 id="code-server">3.1 The Server Code (<code>server.c</code>)</h3>
+<pre><code class="language-c">#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#define PORT 8080
+
+int main() {
+    int server_fd, new_socket;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+    char buffer[1024] = {0};
+
+    // 1. socket(): Creating socket file descriptor
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Optional: Helps in reusing address and port. Prevents "Address already in use" error
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY; // Listen on all available interfaces
+    address.sin_port = htons(PORT);
+
+    // 2. bind(): Forcefully attaching socket to the port 8080
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 3. listen(): Puts the server socket in a passive mode, where it waits for the client to approach
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+    printf("Server listening on port %d\n", PORT);
+
+    // 4. accept(): Extracts the first connection request on the queue of pending connections for the listening socket
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
+    printf("Connection accepted\n");
+
+    // 5. read() / write(): Communicate with the client
+    read(new_socket, buffer, 1024);
+    printf("Client message: %s\n", buffer);
+    send(new_socket, buffer, strlen(buffer), 0); // Echo the message back
+    printf("Echo message sent\n");
+
+    // 6. close(): Close the connection
+    close(new_socket);
+    close(server_fd);
+
+    return 0;
+}
+</code></pre>
+
+                            <h3 id="code-client">3.2 The Client Code (<code>client.c</code>)</h3>
+<pre><code class="language-c">#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+#define PORT 8080
+
+int main() {
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    char *hello = "Hello from client";
+    char buffer[1024] = {0};
+
+    // 1. socket(): Create a socket
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    // Use "127.0.0.1" for localhost
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+
+    // 2. connect(): Connect to the server
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+    printf("Connected to server\n");
+
+    // 3. write() / read(): Communicate
+    send(sock, hello, strlen(hello), 0);
+    printf("Hello message sent\n");
+    read(sock, buffer, 1024);
+    printf("Server echo: %s\n", buffer);
+
+    // 4. close(): Close the connection
+    close(sock);
+
+    return 0;
+}
+</code></pre>
+                            <h3 id="code-run">3.3 Compiling and Running</h3>
+                            <p>Open two separate terminal windows.</p>
+                            <p><strong>Step 1: Compile the code</strong></p>
+                            <p>In each terminal, compile the respective C file:</p>
+<pre><code class="language-shell"># In Terminal 1
+gcc server.c -o server
+
+# In Terminal 2
+gcc client.c -o client</code></pre>
+
+                            <p><strong>Step 2: Run the server</strong></p>
+                            <p>In Terminal 1, start the server. It will wait for a connection.</p>
+<pre><code class="language-shell">./server
+# Output:
+# Server listening on port 8080</code></pre>
+
+                            <p><strong>Step 3: Run the client</strong></p>
+                            <p>In Terminal 2, run the client. It will connect to the server, send its message, and receive the echo.</p>
+<pre><code class="language-shell">./client
+# Output:
+# Connected to server
+# Hello message sent
+# Server echo: Hello from client</code></pre>
+                            <p>If you look back at Terminal 1 (the server), you will see its output:</p>
+<pre><code class="language-shell"># Server's output after client connects
+# Connection accepted
+# Client message: Hello from client
+# Echo message sent</code></pre>
+                            <p>Congratulations! You've just created your first networked application.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Important Structs Section -->
+                <section id="important-structs">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">4. A Note on Data Structures</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                             <p>You might have noticed the <code>struct sockaddr_in</code> in the code. This is a key structure for defining a socket's address.</p>
+<pre><code class="language-c">struct sockaddr_in {
+    short            sin_family;   // e.g. AF_INET
+    unsigned short   sin_port;     // e.g. htons(PORT)
+    struct in_addr   sin_addr;     // see below
+    char             sin_zero[8];  // zero this if you want to
+};
+
+struct in_addr {
+    unsigned long s_addr;  // load with inet_pton()
+};
+</code></pre>
+                            <div class="note">
+                                <p><strong>Network Byte Order:</strong> Computers can store multi-byte numbers in different ways (little-endian vs. big-endian). The network has a standard order called "Network Byte Order" (which is big-endian). The function <code>htons()</code> stands for "Host to Network Short". It converts a 16-bit number (like a port) from the host machine's byte order to the network's byte order, ensuring compatibility. <code>htonl()</code> does the same for 32-bit long integers.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Conclusion Section -->
+                <section id="conclusion">
+                    <div class="mdl-card mdl-shadow--2dp">
+                        <div class="mdl-card__title">
+                            <h2 class="mdl-card__title-text">5. Conclusion & Next Steps</h2>
+                        </div>
+                        <div class="mdl-card__supporting-text">
+                            <p>
+                                You've now taken your first steps into the world of network programming. You learned what a socket is, understood the client-server model, and wrote a working C program to prove it.
+                            </p>
+                            <p>This example is simple; it only handles one client at a time. The real world is more complex. Here are some ideas for where to go next:</p>
+                            <ul>
+                                <li><strong>Handling Multiple Clients:</strong> Research how to use <code>fork()</code>, <code>threads</code>, or the <code>select()</code> system call to allow your server to talk to many clients simultaneously.</li>
+                                <li><strong>Error Handling:</strong> Our error handling is basic. A robust application would check the return values of <code>read()</code>, <code>write()</code>, and <code>send()</code> more carefully.</li>
+                                <li><strong>Build Something Real:</strong> Try building a simple command-line chat application or a remote file transfer program.</li>
+                            </ul>
+                            <p>Socket programming is a powerful skill. Keep experimenting, keep building, and you'll be creating complex distributed systems in no time.</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const toggleButton = document.getElementById('dark-mode-toggle');
+        const body = document.body;
+
+        // Function to set the theme
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+                toggleButton.querySelector('.material-icons').textContent = 'brightness_7'; // Sun icon
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.remove('dark-mode');
+                toggleButton.querySelector('.material-icons').textContent = 'brightness_4'; // Moon icon
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Event listener for the toggle button
+        toggleButton.addEventListener('click', () => {
+            if (body.classList.contains('dark-mode')) {
+                setTheme('light');
+            } else {
+                setTheme('dark');
+            }
+        });
+
+        // Check for saved theme in localStorage or user's system preference
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (prefersDark) {
+            setTheme('dark');
+        }
+
+    </script>
+</body>
+</html>
